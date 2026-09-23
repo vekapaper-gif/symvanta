@@ -30,6 +30,31 @@ h2 {
   text-align: center;
   font-size: 1.4rem;
 }
+.mode-toggle {
+  display: flex;
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.mode-toggle button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-toggle button.active {
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .form-group {
   margin-bottom: 15px;
 }
@@ -95,11 +120,6 @@ textarea {
 }
 
 /* Κουμπιά */
-.btn-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
 button.btn-start {
   width: 100%;
   padding: 14px;
@@ -251,6 +271,11 @@ button.btn-viber:hover {
 <div class="container">
   <h2>Κίνηση & Καταγραφή Συμβάντος</h2>
   
+  <div class="mode-toggle" id="modeToggleContainer">
+    <button type="button" id="btnModeAuto" class="active" onclick="setMode('auto')">⏱️ Αυτόματη (Χρονόμετρο)</button>
+    <button type="button" id="btnModeManual" onclick="setMode('manual')">✏️ Χειροκίνητη Ώρα</button>
+  </div>
+
   <div id="statusActive" class="status-banner active" style="display:none;">
     ⚠️ ΕΝΕΡΓΟ ΣΥΜΒΑΝ ΣΕ ΕΞΕΛΙΞΗ
     <div id="liveTimer" class="timer-display">00:00:00</div>
@@ -260,10 +285,10 @@ button.btn-viber:hover {
     📝 ΤΕΛΙΚΟΣ ΕΛΕΓΧΟΣ & ΚΑΤΑΓΡΑΦΗ ΛΕΠΤΟΜΕΡΕΙΩΝ
   </div>
 
-  <form id="eventForm">
+  <form id="eventForm" onsubmit="return false;">
     <div class="form-group">
       <label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
-      <input type="text" id="eventTitle" required placeholder="π.χ. Περιπολία, Πυρκαγιά, Διάσωση ζώου">
+      <input type="text" id="eventTitle" placeholder="π.χ. Περιπολία, Πυρκαγιά, Διάσωση ζώου">
     </div>
 
     <div class="form-group">
@@ -274,15 +299,27 @@ button.btn-viber:hover {
     <div class="form-row">
       <div class="form-group">
         <label for="eventVehicle">Όχημα (Πινακίδα/Κωδικός):</label>
-        <input type="text" id="eventVehicle" required placeholder="π.χ. ΣΕΔΑ 1, ΣΕΔΑ 2, ΣΕΔΑ 3">
+        <input type="text" id="eventVehicle" placeholder="π.χ. ΣΕΔΑ 1, ΣΕΔΑ 2, ΣΕΔΑ 3">
       </div>
       <div class="form-group">
         <label for="eventCrew">Πλήρωμα (Ονόματα):</label>
-        <input type="text" id="eventCrew" required placeholder="π.χ. Σαρκίρης Φώτης, Αναγνωστάκης Κώστας">
+        <input type="text" id="eventCrew" placeholder="π.χ. Σαρκίρης Φώτης, Αναγνωστάκης Κώστας">
       </div>
     </div>
 
-    <!-- Στοιχεία Ώρας κατά την ανασκόπηση/λήξη -->
+    <!-- Χειροκίνητα Πεδία Ώρας Έναρξης και Λήξης -->
+    <div id="manualTimeBox" class="form-row" style="display:none;">
+      <div class="form-group">
+        <label for="manualStart">Ώρα Έναρξης:</label>
+        <input type="datetime-local" id="manualStart">
+      </div>
+      <div class="form-group">
+        <label for="manualEnd">Ώρα Λήξης:</label>
+        <input type="datetime-local" id="manualEnd">
+      </div>
+    </div>
+
+    <!-- Στοιχεία Ώρας κατά την ανασκόπηση της αυτόματης λειτουργίας -->
     <div id="timeReviewBox" class="time-info-box" style="display:none;">
       <div><span>Έναρξη</span><div id="lblStart">-</div></div>
       <div><span>Λήξη</span><div id="lblEnd">-</div></div>
@@ -291,7 +328,7 @@ button.btn-viber:hover {
 
     <div class="form-group">
       <label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
-      <textarea id="eventDetails" placeholder="Γράψτε εδώ τις λεπτομέρειες, ενέργειες ή παρατηρήσεις μετά τη λήξη..."></textarea>
+      <textarea id="eventDetails" placeholder="Γράψτε εδώ τις λεπτομέρειες, ενέργειες ή παρατηρήσεις..."></textarea>
     </div>
 
     <div id="btnStartContainer">
@@ -320,6 +357,7 @@ button.btn-viber:hover {
 let events = JSON.parse(localStorage.getItem('fleetEvents')) || [];
 let activeEvent = JSON.parse(localStorage.getItem('activeFleetEvent')) || null;
 let pendingEvent = JSON.parse(localStorage.getItem('pendingFleetEvent')) || null;
+let currentMode = localStorage.getItem('fleetMode') || 'auto';
 let timerInterval = null;
 
 function formatDateTime(dateTimeStr) {
@@ -329,6 +367,7 @@ function formatDateTime(dateTimeStr) {
 }
 
 function formatDuration(ms) {
+  if (ms < 0) return '0δ';
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -341,23 +380,39 @@ function formatDuration(ms) {
   return res.join(' ');
 }
 
-// 1. Έναρξη Συμβάντος
-function startEvent() {
-  const title = document.getElementById('eventTitle').value.trim();
-  const route = document.getElementById('eventRoute').value.trim();
-  const vehicle = document.getElementById('eventVehicle').value.trim();
-  const crew = document.getElementById('eventCrew').value.trim();
+function getNowISO() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
 
-  if (!title || !vehicle || !crew) {
-    alert('Παρακαλώ συμπληρώστε Τίτλο, Όχημα και Πλήρωμα πριν την έναρξη.');
-    return;
+function setMode(mode) {
+  if (activeEvent || pendingEvent) {
+    if (!confirm('Υπάρχει ενεργό ή σε εκκρεμότητα συμβάν. Θέλετε να αλλάξετε λειτουργία;')) {
+      return;
+    }
+  }
+  currentMode = mode;
+  localStorage.setItem('fleetMode', mode);
+  
+  if (mode === 'manual') {
+    if (!document.getElementById('manualStart').value) {
+      document.getElementById('manualStart').value = getNowISO();
+    }
+    if (!document.getElementById('manualEnd').value) {
+      document.getElementById('manualEnd').value = getNowISO();
+    }
   }
 
+  updateUIState();
+}
+
+// 1. Έναρξη Συμβάντος (Αυτόματη λειτουργία)
+function startEvent() {
   activeEvent = {
-    title: title,
-    route: route,
-    vehicle: vehicle,
-    crew: crew,
+    title: document.getElementById('eventTitle').value.trim(),
+    route: document.getElementById('eventRoute').value.trim(),
+    vehicle: document.getElementById('eventVehicle').value.trim(),
+    crew: document.getElementById('eventCrew').value.trim(),
     startTime: new Date().toISOString()
   };
 
@@ -365,7 +420,7 @@ function startEvent() {
   updateUIState();
 }
 
-// 2. Λήξη Συμβάντος
+// 2. Λήξη Συμβάντος (Αυτόματη λειτουργία)
 function finishEvent() {
   if (!activeEvent) return;
 
@@ -374,10 +429,10 @@ function finishEvent() {
   const durationMs = endTime - startTime;
 
   pendingEvent = {
-    title: document.getElementById('eventTitle').value,
-    route: document.getElementById('eventRoute').value,
-    vehicle: document.getElementById('eventVehicle').value,
-    crew: document.getElementById('eventCrew').value,
+    title: document.getElementById('eventTitle').value.trim(),
+    route: document.getElementById('eventRoute').value.trim(),
+    vehicle: document.getElementById('eventVehicle').value.trim(),
+    crew: document.getElementById('eventCrew').value.trim(),
     startTime: activeEvent.startTime,
     endTime: endTime.toISOString(),
     duration: formatDuration(durationMs)
@@ -394,15 +449,55 @@ function finishEvent() {
 
 // 3. Οριστική Αποθήκευση στο Ιστορικό
 function saveEventToHistory() {
-  if (!pendingEvent) return;
+  const title = document.getElementById('eventTitle').value.trim();
+  const vehicle = document.getElementById('eventVehicle').value.trim();
+  const crew = document.getElementById('eventCrew').value.trim();
+
+  if (!title || !vehicle || !crew) {
+    alert('Παρακαλώ συμπληρώστε τουλάχιστον Τίτλο, Όχημα και Πλήρωμα πριν την αποθήκευση.');
+    return;
+  }
+
+  let finalStart, finalEnd, durationStr;
+
+  if (currentMode === 'manual') {
+    const manualStartVal = document.getElementById('manualStart').value;
+    const manualEndVal = document.getElementById('manualEnd').value;
+
+    if (!manualStartVal || !manualEndVal) {
+      alert('Παρακαλώ συμπληρώστε την Ώρα Έναρξης και την Ώρα Λήξης.');
+      return;
+    }
+
+    const dtStart = new Date(manualStartVal);
+    const dtEnd = new Date(manualEndVal);
+
+    if (dtEnd < dtStart) {
+      alert('Η ώρα λήξης δεν μπορεί να είναι προγενέστερη της ώρας έναρξης.');
+      return;
+    }
+
+    finalStart = dtStart.toISOString();
+    finalEnd = dtEnd.toISOString();
+    durationStr = formatDuration(dtEnd - dtStart);
+  } else if (pendingEvent) {
+    finalStart = pendingEvent.startTime;
+    finalEnd = pendingEvent.endTime;
+    durationStr = pendingEvent.duration;
+  } else {
+    alert('Σφάλμα: Δεν υπάρχει καταγεγραμμένο συμβάν.');
+    return;
+  }
 
   const finalEvent = {
-    ...pendingEvent,
-    title: document.getElementById('eventTitle').value,
-    route: document.getElementById('eventRoute').value,
-    vehicle: document.getElementById('eventVehicle').value,
-    crew: document.getElementById('eventCrew').value,
-    details: document.getElementById('eventDetails').value
+    title: title,
+    route: document.getElementById('eventRoute').value.trim(),
+    vehicle: vehicle,
+    crew: crew,
+    details: document.getElementById('eventDetails').value.trim(),
+    startTime: finalStart,
+    endTime: finalEnd,
+    duration: durationStr
   };
 
   events.push(finalEvent);
@@ -412,12 +507,21 @@ function saveEventToHistory() {
   localStorage.removeItem('pendingFleetEvent');
 
   document.getElementById('eventForm').reset();
+  
+  if (currentMode === 'manual') {
+    document.getElementById('manualStart').value = getNowISO();
+    document.getElementById('manualEnd').value = getNowISO();
+  }
+
   updateUIState();
   renderEvents();
 }
 
-// Ενημέρωση UI ανάλογα με την κατάσταση
+// Ενημέρωση UI
 function updateUIState() {
+  const btnModeAuto = document.getElementById('btnModeAuto');
+  const btnModeManual = document.getElementById('btnModeManual');
+  const manualTimeBox = document.getElementById('manualTimeBox');
   const statusActive = document.getElementById('statusActive');
   const statusReview = document.getElementById('statusReview');
   const btnStart = document.getElementById('btnStartContainer');
@@ -425,68 +529,77 @@ function updateUIState() {
   const btnSave = document.getElementById('btnSaveContainer');
   const timeReviewBox = document.getElementById('timeReviewBox');
 
-  const titleInput = document.getElementById('eventTitle');
-  const routeInput = document.getElementById('eventRoute');
-  const vehicleInput = document.getElementById('eventVehicle');
-  const crewInput = document.getElementById('eventCrew');
+  if (currentMode === 'auto') {
+    btnModeAuto.classList.add('active');
+    btnModeManual.classList.remove('active');
+  } else {
+    btnModeManual.classList.add('active');
+    btnModeAuto.classList.remove('active');
+  }
 
-  if (activeEvent) {
+  // ΑΥΤΟΜΑΤΗ ΛΕΙΤΟΥΡΓΙΑ - ΕΝΕΡΓΟ ΣΥΜΒΑΝ
+  if (currentMode === 'auto' && activeEvent) {
     statusActive.style.display = 'block';
     statusReview.style.display = 'none';
     timeReviewBox.style.display = 'none';
+    manualTimeBox.style.display = 'none';
 
     btnStart.style.display = 'none';
     btnFinish.style.display = 'block';
     btnSave.style.display = 'none';
 
-    titleInput.value = activeEvent.title;
-    routeInput.value = activeEvent.route || '';
-    vehicleInput.value = activeEvent.vehicle;
-    crewInput.value = activeEvent.crew;
-
-    titleInput.disabled = true;
-    routeInput.disabled = true;
-    vehicleInput.disabled = true;
-    crewInput.disabled = true;
+    if (activeEvent.title) document.getElementById('eventTitle').value = activeEvent.title;
+    if (activeEvent.route) document.getElementById('eventRoute').value = activeEvent.route;
+    if (activeEvent.vehicle) document.getElementById('eventVehicle').value = activeEvent.vehicle;
+    if (activeEvent.crew) document.getElementById('eventCrew').value = activeEvent.crew;
 
     startTimer();
-  } else if (pendingEvent) {
+  } 
+  // ΑΥΤΟΜΑΤΗ ΛΕΙΤΟΥΡΓΙΑ - ΑΝΑΣΚΟΠΗΣΗ
+  else if (currentMode === 'auto' && pendingEvent) {
     statusActive.style.display = 'none';
     statusReview.style.display = 'block';
     timeReviewBox.style.display = 'grid';
+    manualTimeBox.style.display = 'none';
 
     btnStart.style.display = 'none';
     btnFinish.style.display = 'none';
     btnSave.style.display = 'block';
 
-    titleInput.value = pendingEvent.title;
-    routeInput.value = pendingEvent.route || '';
-    vehicleInput.value = pendingEvent.vehicle;
-    crewInput.value = pendingEvent.crew;
+    if (pendingEvent.title) document.getElementById('eventTitle').value = pendingEvent.title;
+    if (pendingEvent.route) document.getElementById('eventRoute').value = pendingEvent.route;
+    if (pendingEvent.vehicle) document.getElementById('eventVehicle').value = pendingEvent.vehicle;
+    if (pendingEvent.crew) document.getElementById('eventCrew').value = pendingEvent.crew;
 
-    titleInput.disabled = false;
-    routeInput.disabled = false;
-    vehicleInput.disabled = false;
-    crewInput.disabled = false;
-
-    document.getElementById('lblStart').textContent = new Date(pendingEvent.startTime).toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'});
-    document.getElementById('lblEnd').textContent = new Date(pendingEvent.endTime).toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('lblStart').textContent = formatDateTime(pendingEvent.startTime);
+    document.getElementById('lblEnd').textContent = formatDateTime(pendingEvent.endTime);
     document.getElementById('lblDuration').textContent = pendingEvent.duration;
 
     if (timerInterval) clearInterval(timerInterval);
-  } else {
+  } 
+  // ΧΕΙΡΟΚΙΝΗΤΗ ΛΕΙΤΟΥΡΓΙΑ (Μόνο πεδία έναρξης/λήξης & κουμπί αποθήκευσης)
+  else if (currentMode === 'manual') {
     statusActive.style.display = 'none';
     statusReview.style.display = 'none';
     timeReviewBox.style.display = 'none';
+    manualTimeBox.style.display = 'flex';
+
+    btnStart.style.display = 'none';
+    btnFinish.style.display = 'none';
+    btnSave.style.display = 'block';
+
+    if (timerInterval) clearInterval(timerInterval);
+  } 
+  // ΑΥΤΟΜΑΤΗ ΛΕΙΤΟΥΡΓΙΑ - ΑΡΧΙΚΗ ΚΑΤΑΣΤΑΣΗ
+  else {
+    statusActive.style.display = 'none';
+    statusReview.style.display = 'none';
+    timeReviewBox.style.display = 'none';
+    manualTimeBox.style.display = 'none';
 
     btnStart.style.display = 'block';
     btnFinish.style.display = 'none';
     btnSave.style.display = 'none';
-
-    titleInput.disabled = false;
-    routeInput.disabled = false;
-    vehicleInput.disabled = false;
-    crewInput.disabled = false;
 
     if (timerInterval) clearInterval(timerInterval);
   }
