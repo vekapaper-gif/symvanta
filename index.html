@@ -66,7 +66,73 @@ textarea {
   resize: vertical;
   height: 100px;
 }
-button.btn-submit {
+
+/* Banners Κατάστασης */
+.status-banner {
+  display: none;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: bold;
+}
+.status-banner.active {
+  display: block;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+.status-banner.review {
+  display: block;
+  background: #e0f2fe;
+  border: 1px solid #0284c7;
+  color: #0369a1;
+}
+.timer-display {
+  font-size: 1.2rem;
+  color: #d97706;
+  margin-top: 5px;
+}
+
+/* Κουμπιά */
+.btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+button.btn-start {
+  width: 100%;
+  padding: 14px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button.btn-start:hover {
+  background-color: #059669;
+}
+
+button.btn-finish {
+  width: 100%;
+  padding: 14px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button.btn-finish:hover {
+  background-color: #dc2626;
+}
+
+button.btn-save {
   width: 100%;
   padding: 14px;
   background-color: #4f46e5;
@@ -79,11 +145,10 @@ button.btn-submit {
   transition: background 0.2s;
   margin-top: 10px;
 }
-button.btn-submit:hover {
+button.btn-save:hover {
   background-color: #4338ca;
 }
 
-/* Κουμπί Εξαγωγής / Share */
 button.btn-viber {
   width: 100%;
   padding: 12px;
@@ -96,16 +161,12 @@ button.btn-viber {
   cursor: pointer;
   transition: background 0.2s;
   margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 button.btn-viber:hover {
   background-color: #5b47d6;
 }
 
-/* Σχεδίαση Καρτών για Κινητά */
+/* Σχεδίαση Καρτών */
 .event-card {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -166,27 +227,48 @@ button.btn-viber:hover {
   font-style: italic;
   padding: 20px;
 }
+.time-info-box {
+  background: #f1f5f9;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  color: #334155;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+  text-align: center;
+}
+.time-info-box span {
+  display: block;
+  font-weight: bold;
+  color: #0f172a;
+}
 </style>
 </head>
 <body>
 
 <div class="container">
   <h2>Κίνηση & Καταγραφή Συμβάντος</h2>
+  
+  <div id="statusActive" class="status-banner active" style="display:none;">
+    ⚠️ ΕΝΕΡΓΟ ΣΥΜΒΑΝ ΣΕ ΕΞΕΛΙΞΗ
+    <div id="liveTimer" class="timer-display">00:00:00</div>
+  </div>
+
+  <div id="statusReview" class="status-banner review" style="display:none;">
+    📝 ΤΕΛΙΚΟΣ ΕΛΕΓΧΟΣ & ΚΑΤΑΓΡΑΦΗ ΛΕΠΤΟΜΕΡΕΙΩΝ
+  </div>
+
   <form id="eventForm">
     <div class="form-group">
       <label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
       <input type="text" id="eventTitle" required placeholder="π.χ. Μετάβαση σε βλάβη, Περιπολία">
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="eventDateTime">Ημερομηνία & Ώρα:</label>
-        <input type="datetime-local" id="eventDateTime" required>
-      </div>
-      <div class="form-group">
-        <label for="eventDuration">Διάρκεια (π.χ. 2 ώρες, 45λ):</label>
-        <input type="text" id="eventDuration" required placeholder="π.x. 1 ώρα & 30λ">
-      </div>
+    <div class="form-group">
+      <label for="eventRoute">Διαδρομή / Προορισμός:</label>
+      <input type="text" id="eventRoute" placeholder="π.χ. Βάση -> Κέντρο Αθήνας -> Βάση">
     </div>
 
     <div class="form-row">
@@ -200,12 +282,29 @@ button.btn-viber:hover {
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
-      <textarea id="eventDetails" placeholder="Γράψτε εδώ όλες τις απαραίτητες λεπτομέρειες, ενέργειες ή παρατηρήσεις..."></textarea>
+    <!-- Στοιχεία Ώρας κατά την ανασκόπηση/λήξη -->
+    <div id="timeReviewBox" class="time-info-box" style="display:none;">
+      <div><span>Έναρξη</span><div id="lblStart">-</div></div>
+      <div><span>Λήξη</span><div id="lblEnd">-</div></div>
+      <div><span>Διάρκεια</span><div id="lblDuration">-</div></div>
     </div>
 
-    <button type="submit" class="btn-submit">Αποθήκευση Συμβάντος</button>
+    <div class="form-group">
+      <label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
+      <textarea id="eventDetails" placeholder="Γράψτε εδώ τις λεπτομέρειες, ενέργειες ή παρατηρήσεις μετά τη λήξη..."></textarea>
+    </div>
+
+    <div id="btnStartContainer">
+      <button type="button" class="btn-start" onclick="startEvent()">▶️ Έναρξη Συμβάντος</button>
+    </div>
+
+    <div id="btnFinishContainer" style="display:none;">
+      <button type="button" class="btn-finish" onclick="finishEvent()">⏹️ Λήξη Συμβάντος</button>
+    </div>
+
+    <div id="btnSaveContainer" style="display:none;">
+      <button type="button" class="btn-save" onclick="saveEventToHistory()">💾 Αποθήκευση στο Ιστορικό</button>
+    </div>
   </form>
 </div>
 
@@ -213,17 +312,200 @@ button.btn-viber:hover {
   <h2>Ιστορικό Συμβάντων</h2>
   <button class="btn-viber" onclick="exportToViber()">📤 Αποστολή Ιστορικού (Viber / Share)</button>
   <div id="eventsList">
-    <!-- Οι κάρτες των συμβάντων θα εμφανίζονται εδώ -->
+    <!-- Οι κάρτες των συμβάντων -->
   </div>
 </div>
 
 <script>
 let events = JSON.parse(localStorage.getItem('fleetEvents')) || [];
+let activeEvent = JSON.parse(localStorage.getItem('activeFleetEvent')) || null;
+let pendingEvent = JSON.parse(localStorage.getItem('pendingFleetEvent')) || null;
+let timerInterval = null;
 
 function formatDateTime(dateTimeStr) {
   if (!dateTimeStr) return '';
   const dt = new Date(dateTimeStr);
   return dt.toLocaleString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  let res = [];
+  if (hours > 0) res.push(`${hours}ω`);
+  if (minutes > 0 || hours > 0) res.push(`${minutes}λ`);
+  res.push(`${seconds}δ`);
+  return res.join(' ');
+}
+
+// 1. Έναρξη Συμβάντος
+function startEvent() {
+  const title = document.getElementById('eventTitle').value.trim();
+  const route = document.getElementById('eventRoute').value.trim();
+  const vehicle = document.getElementById('eventVehicle').value.trim();
+  const crew = document.getElementById('eventCrew').value.trim();
+
+  if (!title || !vehicle || !crew) {
+    alert('Παρακαλώ συμπληρώστε Τίτλο, Όχημα και Πλήρωμα πριν την έναρξη.');
+    return;
+  }
+
+  activeEvent = {
+    title: title,
+    route: route,
+    vehicle: vehicle,
+    crew: crew,
+    startTime: new Date().toISOString()
+  };
+
+  localStorage.setItem('activeFleetEvent', JSON.stringify(activeEvent));
+  updateUIState();
+}
+
+// 2. Λήξη Συμβάντος
+function finishEvent() {
+  if (!activeEvent) return;
+
+  const endTime = new Date();
+  const startTime = new Date(activeEvent.startTime);
+  const durationMs = endTime - startTime;
+
+  pendingEvent = {
+    title: document.getElementById('eventTitle').value,
+    route: document.getElementById('eventRoute').value,
+    vehicle: document.getElementById('eventVehicle').value,
+    crew: document.getElementById('eventCrew').value,
+    startTime: activeEvent.startTime,
+    endTime: endTime.toISOString(),
+    duration: formatDuration(durationMs)
+  };
+
+  activeEvent = null;
+  localStorage.removeItem('activeFleetEvent');
+  localStorage.setItem('pendingFleetEvent', JSON.stringify(pendingEvent));
+  
+  if (timerInterval) clearInterval(timerInterval);
+
+  updateUIState();
+}
+
+// 3. Οριστική Αποθήκευση στο Ιστορικό
+function saveEventToHistory() {
+  if (!pendingEvent) return;
+
+  const finalEvent = {
+    ...pendingEvent,
+    title: document.getElementById('eventTitle').value,
+    route: document.getElementById('eventRoute').value,
+    vehicle: document.getElementById('eventVehicle').value,
+    crew: document.getElementById('eventCrew').value,
+    details: document.getElementById('eventDetails').value
+  };
+
+  events.push(finalEvent);
+  localStorage.setItem('fleetEvents', JSON.stringify(events));
+
+  pendingEvent = null;
+  localStorage.removeItem('pendingFleetEvent');
+
+  document.getElementById('eventForm').reset();
+  updateUIState();
+  renderEvents();
+}
+
+// Ενημέρωση UI ανάλογα με την κατάσταση
+function updateUIState() {
+  const statusActive = document.getElementById('statusActive');
+  const statusReview = document.getElementById('statusReview');
+  const btnStart = document.getElementById('btnStartContainer');
+  const btnFinish = document.getElementById('btnFinishContainer');
+  const btnSave = document.getElementById('btnSaveContainer');
+  const timeReviewBox = document.getElementById('timeReviewBox');
+
+  const titleInput = document.getElementById('eventTitle');
+  const routeInput = document.getElementById('eventRoute');
+  const vehicleInput = document.getElementById('eventVehicle');
+  const crewInput = document.getElementById('eventCrew');
+
+  if (activeEvent) {
+    statusActive.style.display = 'block';
+    statusReview.style.display = 'none';
+    timeReviewBox.style.display = 'none';
+
+    btnStart.style.display = 'none';
+    btnFinish.style.display = 'block';
+    btnSave.style.display = 'none';
+
+    titleInput.value = activeEvent.title;
+    routeInput.value = activeEvent.route || '';
+    vehicleInput.value = activeEvent.vehicle;
+    crewInput.value = activeEvent.crew;
+
+    titleInput.disabled = true;
+    routeInput.disabled = true;
+    vehicleInput.disabled = true;
+    crewInput.disabled = true;
+
+    startTimer();
+  } else if (pendingEvent) {
+    statusActive.style.display = 'none';
+    statusReview.style.display = 'block';
+    timeReviewBox.style.display = 'grid';
+
+    btnStart.style.display = 'none';
+    btnFinish.style.display = 'none';
+    btnSave.style.display = 'block';
+
+    titleInput.value = pendingEvent.title;
+    routeInput.value = pendingEvent.route || '';
+    vehicleInput.value = pendingEvent.vehicle;
+    crewInput.value = pendingEvent.crew;
+
+    titleInput.disabled = false;
+    routeInput.disabled = false;
+    vehicleInput.disabled = false;
+    crewInput.disabled = false;
+
+    document.getElementById('lblStart').textContent = new Date(pendingEvent.startTime).toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('lblEnd').textContent = new Date(pendingEvent.endTime).toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('lblDuration').textContent = pendingEvent.duration;
+
+    if (timerInterval) clearInterval(timerInterval);
+  } else {
+    statusActive.style.display = 'none';
+    statusReview.style.display = 'none';
+    timeReviewBox.style.display = 'none';
+
+    btnStart.style.display = 'block';
+    btnFinish.style.display = 'none';
+    btnSave.style.display = 'none';
+
+    titleInput.disabled = false;
+    routeInput.disabled = false;
+    vehicleInput.disabled = false;
+    crewInput.disabled = false;
+
+    if (timerInterval) clearInterval(timerInterval);
+  }
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  
+  function updateTimer() {
+    if (!activeEvent) return;
+    const diff = new Date() - new Date(activeEvent.startTime);
+    const hrs = String(Math.floor(diff / 3600000)).padStart(2, '0');
+    const mins = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+    const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    document.getElementById('liveTimer').textContent = `${hrs}:${mins}:${secs}`;
+  }
+
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 1000);
 }
 
 function renderEvents() {
@@ -244,35 +526,18 @@ function renderEvents() {
       <h3>${event.title}</h3>
       <button class="btn-delete" onclick="deleteEvent(${originalIndex})">Διαγραφή</button>
       <div class="event-grid">
-        <div><span>Ημερομηνία & Ώρα:</span> ${formatDateTime(event.datetime)}</div>
+        <div><span>Έναρξη:</span> ${formatDateTime(event.startTime)}</div>
+        <div><span>Λήξη:</span> ${formatDateTime(event.endTime)}</div>
         <div><span>Διάρκεια:</span> ${event.duration}</div>
         <div><span>Όχημα:</span> ${event.vehicle}</div>
-        <div><span>Πλήρωμα:</span> ${event.crew}</div>
+        <div style="grid-column: span 2;"><span>Πλήρωμα:</span> ${event.crew}</div>
+        ${event.route ? `<div style="grid-column: span 2;"><span>Διαδρομή / Προορισμός:</span> ${event.route}</div>` : ''}
       </div>
       ${event.details ? `<div class="event-details"><strong>Λεπτομέρειες:</strong><br>${event.details}</div>` : ''}
     `;
     eventsList.appendChild(card);
   });
 }
-
-document.getElementById('eventForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  const newEvent = {
-    title: document.getElementById('eventTitle').value,
-    datetime: document.getElementById('eventDateTime').value,
-    duration: document.getElementById('eventDuration').value,
-    vehicle: document.getElementById('eventVehicle').value,
-    crew: document.getElementById('eventCrew').value,
-    details: document.getElementById('eventDetails').value
-  };
-
-  events.push(newEvent);
-  localStorage.setItem('fleetEvents', JSON.stringify(events));
-  renderEvents();
-  document.getElementById('eventForm').reset();
-  setCurrentDateTime();
-});
 
 window.deleteEvent = function(index) {
   if(confirm('Θέλετε σίγουρα να διαγράψετε αυτό το συμβάν;')) {
@@ -282,7 +547,6 @@ window.deleteEvent = function(index) {
   }
 }
 
-// Συνάρτηση Εξαγωγής & Κοινοποίησης στο Viber / Share
 function exportToViber() {
   if (events.length === 0) {
     alert('Δεν υπάρχουν συμβάντα για αποστολή.');
@@ -294,7 +558,11 @@ function exportToViber() {
 
   [...events].reverse().forEach((e, i) => {
     text += `📌 *${i + 1}. ${e.title}*\n`;
-    text += `📅 Ημ/νία: ${formatDateTime(e.datetime)}\n`;
+    if (e.route) {
+      text += `📍 Διαδρομή: ${e.route}\n`;
+    }
+    text += `🟢 Έναρξη: ${formatDateTime(e.startTime)}\n`;
+    text += `🔴 Λήξη: ${formatDateTime(e.endTime)}\n`;
     text += `⏱️ Διάρκεια: ${e.duration}\n`;
     text += `🚗 Όχημα: ${e.vehicle}\n`;
     text += `👥 Πλήρωμα: ${e.crew}\n`;
@@ -304,31 +572,17 @@ function exportToViber() {
     text += "───────────────────\n";
   });
 
-  // Χρήση Native Web Share API (λειτουργεί άψογα σε κινητά)
   if (navigator.share) {
-    navigator.share({
-      title: 'Ιστορικό Συμβάντων',
-      text: text
-    }).catch((err) => {
-      console.log('Share canceled or failed:', err);
-    });
+    navigator.share({ title: 'Ιστορικό Συμβάντων', text: text }).catch(() => {});
   } else {
-    // Αν εκτελείται σε Desktop/Browser που δεν υποστηρίζει Web Share, αντιγράφει το κείμενο
     navigator.clipboard.writeText(text).then(() => {
-      alert('Το ιστορικό αντιγράφηκε στο πρόχειρο (Clipboard)! Μπορείτε να το κάνετε Επικόλληση (Paste) στο Viber.');
-    }).catch(() => {
-      alert('Αποτυχία αντιγραφής.');
+      alert('Το ιστορικό αντιγράφηκε στο πρόχειρο!');
     });
   }
 }
 
-function setCurrentDateTime() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  document.getElementById('eventDateTime').value = now.toISOString().slice(0, 16);
-}
-
-setCurrentDateTime();
+// Αρχικοποίηση
+updateUIState();
 renderEvents();
 </script>
 
