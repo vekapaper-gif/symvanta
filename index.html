@@ -83,6 +83,28 @@ button.btn-submit:hover {
   background-color: #4338ca;
 }
 
+/* Κουμπί Εξαγωγής / Share */
+button.btn-viber {
+  width: 100%;
+  padding: 12px;
+  background-color: #7360f2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+button.btn-viber:hover {
+  background-color: #5b47d6;
+}
+
 /* Σχεδίαση Καρτών για Κινητά */
 .event-card {
   background: #fff;
@@ -189,6 +211,7 @@ button.btn-submit:hover {
 
 <div class="archive-container">
   <h2>Ιστορικό Συμβάντων</h2>
+  <button class="btn-viber" onclick="exportToViber()">📤 Αποστολή Ιστορικού (Viber / Share)</button>
   <div id="eventsList">
     <!-- Οι κάρτες των συμβάντων θα εμφανίζονται εδώ -->
   </div>
@@ -256,6 +279,46 @@ window.deleteEvent = function(index) {
     events.splice(index, 1);
     localStorage.setItem('fleetEvents', JSON.stringify(events));
     renderEvents();
+  }
+}
+
+// Συνάρτηση Εξαγωγής & Κοινοποίησης στο Viber / Share
+function exportToViber() {
+  if (events.length === 0) {
+    alert('Δεν υπάρχουν συμβάντα για αποστολή.');
+    return;
+  }
+
+  let text = "📋 *ΙΣΤΟΡΙΚΟ ΣΥΜΒΑΝΤΩΝ*\n";
+  text += "═══════════════════\n\n";
+
+  [...events].reverse().forEach((e, i) => {
+    text += `📌 *${i + 1}. ${e.title}*\n`;
+    text += `📅 Ημ/νία: ${formatDateTime(e.datetime)}\n`;
+    text += `⏱️ Διάρκεια: ${e.duration}\n`;
+    text += `🚗 Όχημα: ${e.vehicle}\n`;
+    text += `👥 Πλήρωμα: ${e.crew}\n`;
+    if (e.details) {
+      text += `📝 Λεπτομέρειες: ${e.details}\n`;
+    }
+    text += "───────────────────\n";
+  });
+
+  // Χρήση Native Web Share API (λειτουργεί άψογα σε κινητά)
+  if (navigator.share) {
+    navigator.share({
+      title: 'Ιστορικό Συμβάντων',
+      text: text
+    }).catch((err) => {
+      console.log('Share canceled or failed:', err);
+    });
+  } else {
+    // Αν εκτελείται σε Desktop/Browser που δεν υποστηρίζει Web Share, αντιγράφει το κείμενο
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Το ιστορικό αντιγράφηκε στο πρόχειρο (Clipboard)! Μπορείτε να το κάνετε Επικόλληση (Paste) στο Viber.');
+    }).catch(() => {
+      alert('Αποτυχία αντιγραφής.');
+    });
   }
 }
 
