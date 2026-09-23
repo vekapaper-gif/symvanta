@@ -34,18 +34,17 @@ width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;
 box-sizing: border-box; font-family: inherit; font-size: 1rem; background-color: #f8fafc;
 }
 textarea { resize: vertical; height: 80px; }
-button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
+button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 button.btn-submit {
 width: 100%; background-color: #4f46e5; color: white; font-size: 16px; margin-top: 10px;
 }
-button.btn-submit:hover { background-color: #4338ca; }
 
 .actions-bar { display: flex; gap: 8px; margin-bottom: 15px; justify-content: space-between; }
-.actions-bar button { flex: 1; color: white; font-size: 0.85rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.actions-bar button { flex: 1; color: white; font-size: 0.85rem; text-align: center; }
 
 .btn-excel { background-color: #107c41; }
-.btn-viber { background-color: #7360f2; } /* Μωβ χρώμα Viber */
+.btn-viber { background-color: #7360f2; }
 .btn-clear { background-color: #64748b; }
 
 .event-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative; }
@@ -64,7 +63,7 @@ button.btn-submit:hover { background-color: #4338ca; }
 <form id="eventForm">
 <div class="form-group">
 <label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
-<input type="text" id="eventTitle" required placeholder="π.χ. Μετάβαση σε βλάβη">
+<input type="text" id="eventTitle" required>
 </div>
 <div class="form-row">
 <div class="form-group">
@@ -79,16 +78,16 @@ button.btn-submit:hover { background-color: #4338ca; }
 <div class="form-row">
 <div class="form-group">
 <label for="eventVehicle">Όχημα:</label>
-<input type="text" id="eventVehicle" required placeholder="π.χ. ΚΗΥ-1234">
+<input type="text" id="eventVehicle" required>
 </div>
 <div class="form-group">
 <label for="eventCrew">Πλήρωμα:</label>
-<input type="text" id="eventCrew" required placeholder="π.χ. Παπαδόπουλος">
+<input type="text" id="eventCrew" required>
 </div>
 </div>
 <div class="form-group">
 <label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
-<textarea id="eventDetails" placeholder="Γράψτε επιπλέον σημειώσεις..."></textarea>
+<textarea id="eventDetails"></textarea>
 </div>
 <button type="submit" class="btn-submit">Αποθήκευση Συμβάντος</button>
 </form>
@@ -98,21 +97,22 @@ button.btn-submit:hover { background-color: #4338ca; }
 <h2>Ιστορικό Συμβάντων</h2>
 <div class="actions-bar">
 <button class="btn-excel" onclick="exportToExcel()">📊 Excel</button>
-<button class="btn-viber" onclick="sendToViber()">📱 Αποστολή Viber</button>
+<button class="btn-viber" onclick="sendToViber()">📱 Viber</button>
 <button class="btn-clear" onclick="clearAllData()">🗑️ Καθαρισμός</button>
 </div>
 <div id="eventsList"></div>
 </div>
 
 <script>
+// Πίνακας στη μνήμη της σελίδας (λειτουργεί πάντα)
 let events = [];
 
-// Φόρτωση δεδομένων από τη μνήμη της συσκευής
+// Ασφαλής φόρτωση με παράκαμψη σφαλμάτων κλειδωμένης μνήμης
 try {
 const saved = localStorage.getItem('fleetStorageAppSystem');
 if (saved) { events = JSON.parse(saved); }
 } catch(e) {
-console.log("Storage read error.");
+console.log("Η μνήμη της συσκευής είναι κλειδωμένη. Τα δεδομένα κρατούνται προσωρινά στη σελίδα.");
 }
 
 function formatDateTime(dateTimeStr) {
@@ -131,6 +131,7 @@ eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν κατα�
 return;
 }
 
+// Εμφάνιση (τα νέα πάνω)
 for (let i = events.length - 1; i >= 0; i--) {
 const event = events[i];
 const card = document.createElement('div');
@@ -165,7 +166,10 @@ details: document.getElementById('eventDetails').value
 
 events.push(newEvent);
 
-try { localStorage.setItem('fleetStorageAppSystem', JSON.stringify(events)); } catch(err) {}
+// Προσπάθεια αποθήκευσης χωρίς να κολλήσει η εφαρμογή αν αποτύχει
+try {
+localStorage.setItem('fleetStorageAppSystem', JSON.stringify(events));
+} catch(err) {}
 
 renderEvents();
 document.getElementById('eventForm').reset();
@@ -181,7 +185,7 @@ renderEvents();
 }
 
 window.clearAllData = function() {
-if(confirm('ΠΡΟΣΟΧΗ! Διαγραφή όλου του ιστορικού από τη συσκευή;')) {
+if(confirm('Σίγουρα διαγραφή όλου του ιστορικού;')) {
 events = [];
 try { localStorage.removeItem('fleetStorageAppSystem'); } catch(e) {}
 renderEvents();
@@ -203,6 +207,8 @@ link.setAttribute("download", `Istoriko.csv`);
 link.click();
 }
 
-// Λειτουργία άμεσης αποστολής στο Viber
 window.sendToViber = function() {
 if (!events || events.length === 0) { alert('Δεν υπάρχουν συμβάντα για αποστολή!'); return; }
+
+let textToSend = "📋 ΙΣΤΟΡΙΚΟ ΣΥΜΒΑΝΤΩΝ\n\n";
+events.forEach((event, i) => {
