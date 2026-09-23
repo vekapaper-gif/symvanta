@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Καταγραφή Συμβάντων</title>
+<title>Κοινή Καταγραφή Συμβάντων</title>
 <style>
 body {
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -57,7 +57,7 @@ font-family: inherit;
 font-size: 1rem;
 background-color: #f8fafc;
 }
-input:focus, textarea:focus {
+input:focus, select:focus, textarea:focus {
 outline: none;
 border-color: #4f46e5;
 background-color: #fff;
@@ -66,41 +66,46 @@ textarea {
 resize: vertical;
 height: 100px;
 }
-button {
-padding: 12px;
+button.btn-submit {
+width: 100%;
+padding: 14px;
+background-color: #4f46e5;
+color: white;
 border: none;
 border-radius: 8px;
+font-size: 16px;
 font-weight: bold;
 cursor: pointer;
 transition: background 0.2s;
-}
-button.btn-submit {
-width: 100%;
-background-color: #4f46e5;
-color: white;
-font-size: 16px;
 margin-top: 10px;
 }
-button.btn-submit:hover { background-color: #4338ca; }
-
-.sync-box {
-display: flex;
-gap: 10px;
-margin-bottom: 15px;
-justify-content: center;
-background: #f8fafc;
-padding: 10px;
-border-radius: 8px;
-border: 1px dashed #cbd5e1;
+button.btn-submit:hover {
+background-color: #4338ca;
 }
-.btn-excel { background-color: #107c41; color: white; font-size: 0.85rem;}
-.btn-excel:hover { background-color: #0d6534; }
 
-.btn-share { background-color: #0284c7; color: white; font-size: 0.85rem;}
-.btn-share:hover { background-color: #0369a1; }
-
-.btn-import { background-color: #475569; color: white; font-size: 0.85rem;}
-.btn-import:hover { background-color: #334155; }
+.header-actions {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 15px;
+}
+.header-actions h2 {
+margin: 0;
+}
+button.btn-excel {
+background-color: #107c41;
+color: white;
+border: none;
+padding: 10px 16px;
+border-radius: 8px;
+font-weight: bold;
+font-size: 0.9rem;
+cursor: pointer;
+transition: background 0.2s;
+}
+button.btn-excel:hover {
+background-color: #0d6534;
+}
 
 .event-card {
 background: #fff;
@@ -146,18 +151,28 @@ top: 15px;
 right: 15px;
 background-color: #fee2e2;
 color: #ef4444;
+border: none;
 padding: 6px 12px;
 border-radius: 6px;
+cursor: pointer;
+font-weight: 600;
 font-size: 0.8rem;
 }
-.btn-delete:hover { background-color: #fca5a5; }
-.no-events { text-align: center; color: #94a3b8; font-style: italic; padding: 20px; }
+.btn-delete:hover {
+background-color: #fca5a5;
+}
+.no-events {
+text-align: center;
+color: #94a3b8;
+font-style: italic;
+padding: 20px;
+}
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2>Κίνηση & Καταγραφή Συμβάντος</h2>
+<h2>Κίνηση & Καταγραφή Συμβάντος (Κοινό Δίκτυο)</h2>
 <form id="eventForm">
 <div class="form-group">
 <label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
@@ -196,37 +211,46 @@ font-size: 0.8rem;
 </div>
 
 <div class="archive-container">
-<h2>Ιστορικό Συμβάντων</h2>
-
-<div class="sync-box">
-<button class="btn-excel" onclick="exportToExcel()">📊 Excel</button>
-<button class="btn-share" onclick="exportBackupData()">📤 Εξαγωγή για Ομάδα</button>
-<button class="btn-import" onclick="document.getElementById('importFile').click()">📥 Εισαγωγή από Ομάδα</button>
-<input type="file" id="importFile" style="display:none;" accept=".json" onchange="importBackupData(this)">
+<div class="header-actions">
+<h2>Κοινό Ιστορικό</h2>
+<button class="btn-excel" onclick="exportToExcel()">📊 Εξαγωγή Excel</button>
 </div>
-
-<div id="eventsList"></div>
+<div id="eventsList">Φόρτωση συμβάντων...</div>
 </div>
 
 <script>
-let events = JSON.parse(localStorage.getItem('fleetEventsData')) || [];
+// ΠΡΟΣΟΧΗ: Αντικαταστήστε το παρακάτω link με το δικό σας URL από το Firebase
+const FIREBASE_DB_URL = "https://symvanta-app-default-rtdb.europe-west1.firebasedatabase.app//events.json";
+
+let localEventsArray = []; // Χρησιμοποιείται για την εξαγωγή Excel
 
 function formatDateTime(dateTimeStr) {
 const dt = new Date(dateTimeStr);
 return dt.toLocaleString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
 }
 
-function renderEvents() {
+// Φόρτωση δεδομένων από την κοινή βάση (Realtime)
+function fetchEvents() {
+fetch(FIREBASE_DB_URL)
+.then(response => response.json())
+.then(data => {
 const eventsList = document.getElementById('eventsList');
 eventsList.innerHTML = '';
+localEventsArray = [];
 
-if (events.length === 0) {
+if (!data) {
 eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν καταγεγραμμένα συμβάντα.</div>';
 return;
 }
 
-[...events].reverse().forEach((event, index) => {
-const originalIndex = events.length - 1 - index;
+// Μετατροπή αντικειμένου Firebase σε πίνακα και ταξινόμηση
+const keys = Object.keys(data);
+
+keys.reverse().forEach(key => {
+const event = data[key];
+event.id = key; // Αποθήκευση του μοναδικού ID για διαγραφή
+localEventsArray.push(event);
+
 const card = document.createElement('div');
 card.className = 'event-card';
 
@@ -234,7 +258,7 @@ const cleanDetails = event.details ? event.details.replace(/&/g, "&amp;").replac
 
 card.innerHTML = `
 <h3>${event.title}</h3>
-<button class="btn-delete" onclick="deleteEvent(${originalIndex})">Διαγραφή</button>
+<button class="btn-delete" onclick="deleteEvent('${key}')">Διαγραφή</button>
 <div class="event-grid">
 <div><span>Ημερομηνία & Ώρα:</span> ${formatDateTime(event.datetime)}</div>
 <div><span>Διάρκεια:</span> ${event.duration}</div>
@@ -245,29 +269,18 @@ ${event.details ? `<div class="event-details"><strong>Λεπτομέρειες:<
 `;
 eventsList.appendChild(card);
 });
+})
+.catch(error => {
+document.getElementById('eventsList').innerHTML = '<div class="no-events" style="color:red;">Σφάλμα σύνδεσης με τη βάση.</div>';
+});
 }
 
+// Αποθήκευση νέου συμβάντος στην κοινή βάση
 document.getElementById('eventForm').addEventListener('submit', function(e) {
 e.preventDefault();
+
 const newEvent = {
 title: document.getElementById('eventTitle').value,
 datetime: document.getElementById('eventDateTime').value,
 duration: document.getElementById('eventDuration').value,
 vehicle: document.getElementById('eventVehicle').value,
-crew: document.getElementById('eventCrew').value,
-details: document.getElementById('eventDetails').value
-};
-events.push(newEvent);
-localStorage.setItem('fleetEventsData', JSON.stringify(events));
-renderEvents();
-document.getElementById('eventForm').reset();
-setCurrentDateTime();
-});
-
-window.deleteEvent = function(index) {
-if(confirm('Θέλετε σίγουρα να διαγράψετε αυτό το συμβάν;')) {
-events.splice(index, 1);
-localStorage.setItem('fleetEventsData', JSON.stringify(events));
-renderEvents();
-}
-}
