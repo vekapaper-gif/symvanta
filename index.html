@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Κοινή Καταγραφή Συμβάντων</title>
+<title>Καταγραφή Συμβάντων</title>
 <style>
 body {
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,16 +30,9 @@ color: #1e293b;
 text-align: center;
 font-size: 1.4rem;
 }
-.form-group {
-margin-bottom: 15px;
-}
-.form-row {
-display: flex;
-gap: 15px;
-}
-.form-row .form-group {
-flex: 1;
-}
+.form-group { margin-bottom: 15px; }
+.form-row { display: flex; gap: 15px; }
+.form-row .form-group { flex: 1; }
 label {
 display: block;
 margin-bottom: 6px;
@@ -47,7 +40,7 @@ font-weight: 600;
 color: #475569;
 font-size: 0.9rem;
 }
-input[type="text"], input[type="datetime-local"], select, textarea {
+input[type="text"], input[type="datetime-local"], textarea {
 width: 100%;
 padding: 12px;
 border: 1px solid #cbd5e1;
@@ -57,15 +50,7 @@ font-family: inherit;
 font-size: 1rem;
 background-color: #f8fafc;
 }
-input:focus, select:focus, textarea:focus {
-outline: none;
-border-color: #4f46e5;
-background-color: #fff;
-}
-textarea {
-resize: vertical;
-height: 100px;
-}
+textarea { resize: vertical; height: 100px; }
 button.btn-submit {
 width: 100%;
 padding: 14px;
@@ -76,21 +61,14 @@ border-radius: 8px;
 font-size: 16px;
 font-weight: bold;
 cursor: pointer;
-transition: background 0.2s;
 margin-top: 10px;
 }
-button.btn-submit:hover {
-background-color: #4338ca;
-}
-
+button.btn-submit:hover { background-color: #4338ca; }
 .header-actions {
 display: flex;
 justify-content: space-between;
 align-items: center;
 margin-bottom: 15px;
-}
-.header-actions h2 {
-margin: 0;
 }
 button.btn-excel {
 background-color: #107c41;
@@ -99,14 +77,8 @@ border: none;
 padding: 10px 16px;
 border-radius: 8px;
 font-weight: bold;
-font-size: 0.9rem;
 cursor: pointer;
-transition: background 0.2s;
 }
-button.btn-excel:hover {
-background-color: #0d6534;
-}
-
 .event-card {
 background: #fff;
 border: 1px solid #e2e8f0;
@@ -114,27 +86,16 @@ border-radius: 8px;
 padding: 15px;
 margin-bottom: 15px;
 position: relative;
-box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
-.event-card h3 {
-margin: 0 0 10px 0;
-color: #1e293b;
-font-size: 1.1rem;
-padding-right: 80px;
-}
+.event-card h3 { margin: 0 0 10px 0; color: #1e293b; font-size: 1.1rem; }
 .event-grid {
 display: grid;
 grid-template-columns: 1fr 1fr;
 gap: 8px;
 font-size: 0.85rem;
 color: #64748b;
-margin-bottom: 10px;
 }
-.event-grid div span {
-font-weight: 600;
-color: #334155;
-display: block;
-}
+.event-grid div span { font-weight: 600; color: #334155; display: block; }
 .event-details {
 font-size: 0.9rem;
 color: #334155;
@@ -155,30 +116,21 @@ border: none;
 padding: 6px 12px;
 border-radius: 6px;
 cursor: pointer;
-font-weight: 600;
-font-size: 0.8rem;
 }
-.btn-delete:hover {
-background-color: #fca5a5;
-}
-.no-events {
-text-align: center;
-color: #94a3b8;
-font-style: italic;
-padding: 20px;
-}
+.no-events { text-align: center; color: #94a3b8; font-style: italic; padding: 20px; }
+.status-bar { font-size: 0.8rem; text-align: center; color: #64748b; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2>Κίνηση & Καταγραφή Συμβάντος (Κοινό Δίκτυο)</h2>
+<h2>Καταγραφή Συμβάντος</h2>
+<div id="statusBar" class="status-bar">Σύνδεση...</div>
 <form id="eventForm">
 <div class="form-group">
 <label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
-<input type="text" id="eventTitle" required placeholder="π.χ. Μετάβαση σε βλάβη">
+<input type="text" id="eventTitle" required>
 </div>
-
 <div class="form-row">
 <div class="form-group">
 <label for="eventDateTime">Ημερομηνία & Ώρα:</label>
@@ -186,81 +138,77 @@ padding: 20px;
 </div>
 <div class="form-group">
 <label for="eventDuration">Διάρκεια:</label>
-<input type="text" id="eventDuration" required placeholder="π.x. 1 ώρα">
+<input type="text" id="eventDuration" required placeholder="π.χ. 1 ώρα">
 </div>
 </div>
-
 <div class="form-row">
 <div class="form-group">
 <label for="eventVehicle">Όχημα:</label>
-<input type="text" id="eventVehicle" required placeholder="π.χ. ΚΗΥ-1234">
+<input type="text" id="eventVehicle" required>
 </div>
 <div class="form-group">
 <label for="eventCrew">Πλήρωμα:</label>
-<input type="text" id="eventCrew" required placeholder="π.χ. Παπαδόπουλος">
+<input type="text" id="eventCrew" required>
 </div>
 </div>
-
 <div class="form-group">
-<label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
-<textarea id="eventDetails" placeholder="Γράψτε εδώ λεπτομέρειες..."></textarea>
+<label for="eventDetails">Λεπτομέρειες:</label>
+<textarea id="eventDetails"></textarea>
 </div>
-
-<button type="submit" class="btn-submit">Αποθήκευση Συμβάντος</button>
+<button type="submit" class="btn-submit" id="submitBtn">Αποθήκευση Συμβάντος</button>
 </form>
 </div>
 
 <div class="archive-container">
 <div class="header-actions">
-<h2>Κοινό Ιστορικό</h2>
-<button class="btn-excel" onclick="exportToExcel()">📊 Εξαγωγή Excel</button>
+<h2>Ιστορικό Συμβάντων</h2>
+<button class="btn-excel" onclick="exportToExcel()">📊 Excel</button>
 </div>
-<div id="eventsList">Φόρτωση συμβάντων...</div>
+<div id="eventsList">Φόρτωση...</div>
 </div>
 
 <script>
-// ΠΡΟΣΟΧΗ: Αντικαταστήστε το παρακάτω link με το δικό σας URL από το Firebase
-const FIREBASE_DB_URL = "https://symvanta-app-default-rtdb.europe-west1.firebasedatabase.app//events.json";
-
-let localEventsArray = []; // Χρησιμοποιείται για την εξαγωγή Excel
+// Έτοιμη, ενεργοποιημένη online βάση δεδομένων
+const DB_URL = "https://firebasedatabase.app";
+let localEvents = [];
 
 function formatDateTime(dateTimeStr) {
 const dt = new Date(dateTimeStr);
 return dt.toLocaleString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
 }
 
-// Φόρτωση δεδομένων από την κοινή βάση (Realtime)
-function fetchEvents() {
-fetch(FIREBASE_DB_URL)
-.then(response => response.json())
+// Φόρτωση από την Online βάση
+function loadFromDatabase() {
+document.getElementById('statusBar').innerText = "🔄 Ανανέωση...";
+fetch(DB_URL)
+.then(res => res.json())
 .then(data => {
 const eventsList = document.getElementById('eventsList');
 eventsList.innerHTML = '';
-localEventsArray = [];
+localEvents = [];
 
 if (!data) {
-eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν καταγεγραμμένα συμβάντα.</div>';
+eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν συμβάντα στο κοινό ιστορικό.</div>';
+document.getElementById('statusBar').innerText = "🟢 Online";
 return;
 }
 
-// Μετατροπή αντικειμένου Firebase σε πίνακα και ταξινόμηση
+// Μετατροπή των κλειδιών της Firebase σε πίνακα
 const keys = Object.keys(data);
-
 keys.reverse().forEach(key => {
 const event = data[key];
-event.id = key; // Αποθήκευση του μοναδικού ID για διαγραφή
-localEventsArray.push(event);
+event.firebaseId = key;
+localEvents.push(event);
 
 const card = document.createElement('div');
 card.className = 'event-card';
-
 const cleanDetails = event.details ? event.details.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
 
 card.innerHTML = `
 <h3>${event.title}</h3>
-<button class="btn-delete" onclick="deleteEvent('${key}')">Διαγραφή</button>
+<button class="btn-delete" onclick="deleteFromDatabase('${key}')">Διαγραφή</button>
 <div class="event-grid">
-<div><span>Ημερομηνία & Ώρα:</span> ${formatDateTime(event.datetime)}</div>
+<div><span>Ημερομηνία:</span> ${formatDateTime(event.datetime)}</div>
 <div><span>Διάρκεια:</span> ${event.duration}</div>
 <div><span>Όχημα:</span> ${event.vehicle}</div>
 <div><span>Πλήρωμα:</span> ${event.crew}</div>
@@ -269,18 +217,41 @@ ${event.details ? `<div class="event-details"><strong>Λεπτομέρειες:<
 `;
 eventsList.appendChild(card);
 });
+document.getElementById('statusBar').innerText = "🟢 Online";
 })
-.catch(error => {
-document.getElementById('eventsList').innerHTML = '<div class="no-events" style="color:red;">Σφάλμα σύνδεσης με τη βάση.</div>';
+.catch(() => {
+document.getElementById('statusBar').innerText = "🔴 Αποτυχία σύνδεσης";
 });
 }
 
-// Αποθήκευση νέου συμβάντος στην κοινή βάση
+// Αποθήκευση στην Online βάση
 document.getElementById('eventForm').addEventListener('submit', function(e) {
 e.preventDefault();
+document.getElementById('statusBar').innerText = "⏳ Αποστολή...";
 
 const newEvent = {
 title: document.getElementById('eventTitle').value,
 datetime: document.getElementById('eventDateTime').value,
 duration: document.getElementById('eventDuration').value,
 vehicle: document.getElementById('eventVehicle').value,
+crew: document.getElementById('eventCrew').value,
+details: document.getElementById('eventDetails').value
+};
+
+fetch(DB_URL, {
+method: 'POST',
+body: JSON.stringify(newEvent)
+})
+.then(() => {
+document.getElementById('eventForm').reset();
+setCurrentDateTime();
+loadFromDatabase();
+});
+});
+
+// Διαγραφή από την Online βάση
+window.deleteFromDatabase = function(key) {
+if(confirm('Σίγουρα διαγραφή;')) {
+document.getElementById('statusBar').innerText = "⏳ Διαγραφή...";
+const deleteUrl = `https://firebasedatabase.app{key}.json`;
+fetch(deleteUrl, { method: 'DELETE' })
