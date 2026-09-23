@@ -1,236 +1,277 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Καταγραφή Συμβάντων</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container, .archive-container {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-        h2 { margin-top: 0; color: #1e293b; text-align: center; font-size: 1.4rem; }
-        .form-group { margin-bottom: 15px; }
-        .form-row { display: flex; gap: 15px; }
-        .form-row .form-group { flex: 1; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #475569; font-size: 0.9rem; }
-        input[type="text"], input[type="datetime-local"], textarea {
-            width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;
-            box-sizing: border-box; font-family: inherit; font-size: 1rem; background-color: #f8fafc;
-        }
-        textarea { resize: vertical; height: 80px; }
-        
-        button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        button.btn-submit {
-            width: 100%; background-color: #4f46e5; color: white; font-size: 16px; margin-top: 10px;
-        }
-        
-        .actions-bar { display: flex; gap: 8px; margin-bottom: 15px; justify-content: space-between; }
-        .actions-bar button { flex: 1; color: white; font-size: 0.85rem; text-align: center; }
-        
-        .btn-excel { background-color: #107c41; }
-        .btn-viber { background-color: #7360f2; }
-        .btn-clear { background-color: #64748b; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Καταγραφή Συμβάντων</title>
+<style>
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background-color: #f0f2f5;
+margin: 0;
+padding: 15px;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+.container, .archive-container {
+background: white;
+padding: 20px;
+border-radius: 12px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+width: 100%;
+max-width: 600px;
+margin-bottom: 20px;
+box-sizing: border-box;
+}
+h2 {
+margin-top: 0;
+color: #1e293b;
+text-align: center;
+font-size: 1.4rem;
+}
+.form-group {
+margin-bottom: 15px;
+}
+.form-row {
+display: flex;
+gap: 15px;
+}
+.form-row .form-group {
+flex: 1;
+}
+label {
+display: block;
+margin-bottom: 6px;
+font-weight: 600;
+color: #475569;
+font-size: 0.9rem;
+}
+input[type="text"], input[type="datetime-local"], select, textarea {
+width: 100%;
+padding: 12px;
+border: 1px solid #cbd5e1;
+border-radius: 8px;
+box-sizing: border-box;
+font-family: inherit;
+font-size: 1rem;
+background-color: #f8fafc;
+}
+input:focus, select:focus, textarea:focus {
+outline: none;
+border-color: #4f46e5;
+background-color: #fff;
+}
+textarea {
+resize: vertical;
+height: 100px;
+}
+button.btn-submit {
+width: 100%;
+padding: 14px;
+background-color: #4f46e5;
+color: white;
+border: none;
+border-radius: 8px;
+font-size: 16px;
+font-weight: bold;
+cursor: pointer;
+transition: background 0.2s;
+margin-top: 10px;
+}
+button.btn-submit:hover {
+background-color: #4338ca;
+}
 
-        .event-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative; }
-        .event-card h3 { margin: 0 0 10px 0; color: #1e293b; font-size: 1.1rem; padding-right: 60px; }
-        .event-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem; color: #64748b; }
-        .event-grid div span { font-weight: 600; color: #334155; display: block; }
-        .event-details { font-size: 0.9rem; color: #334155; background: #f8fafc; padding: 10px; border-radius: 6px; border-left: 3px solid #cbd5e1; margin-top: 8px; white-space: pre-wrap; }
-        .btn-delete { position: absolute; top: 15px; right: 15px; background-color: #fee2e2; color: #ef4444; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; }
-        .no-events { text-align: center; color: #94a3b8; font-style: italic; padding: 20px; }
-    </style>
+/* Σχεδίαση Καρτών για Κινητά */
+.event-card {
+background: #fff;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 15px;
+margin-bottom: 15px;
+position: relative;
+box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.event-card h3 {
+margin: 0 0 10px 0;
+color: #1e293b;
+font-size: 1.1rem;
+padding-right: 80px;
+}
+.event-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+font-size: 0.85rem;
+color: #64748b;
+margin-bottom: 10px;
+}
+.event-grid div span {
+font-weight: 600;
+color: #334155;
+display: block;
+}
+.event-details {
+font-size: 0.9rem;
+color: #334155;
+background: #f8fafc;
+padding: 10px;
+border-radius: 6px;
+border-left: 3px solid #cbd5e1;
+margin-top: 8px;
+white-space: pre-wrap;
+}
+.btn-delete {
+position: absolute;
+top: 15px;
+right: 15px;
+background-color: #fee2e2;
+color: #ef4444;
+border: none;
+padding: 6px 12px;
+border-radius: 6px;
+cursor: pointer;
+font-weight: 600;
+font-size: 0.8rem;
+}
+.btn-delete:hover {
+background-color: #fca5a5;
+}
+.no-events {
+text-align: center;
+color: #94a3b8;
+font-style: italic;
+padding: 20px;
+}
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Κίνηση & Καταγραφή Συμβάντος</h2>
-        <form id="eventForm">
-            <div class="form-group">
-                <label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
-                <input type="text" id="eventTitle" required>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="eventDateTime">Ημερομηνία & Ώρα:</label>
-                    <input type="datetime-local" id="eventDateTime" required>
-                </div>
-                <div class="form-group">
-                    <label for="eventDuration">Διάρκεια:</label>
-                    <input type="text" id="eventDuration" required placeholder="π.χ. 1 ώρα">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="eventVehicle">Όχημα:</label>
-                    <input type="text" id="eventVehicle" required>
-                </div>
-                <div class="form-group">
-                    <label for="eventCrew">Πλήρωμα:</label>
-                    <input type="text" id="eventCrew" required>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
-                <textarea id="eventDetails"></textarea>
-            </div>
-            <button type="submit" class="btn-submit">Αποθήκευση Συμβάντος</button>
-        </form>
-    </div>
+<div class="container">
+<h2>Κίνηση & Καταγραφή Συμβάντος</h2>
+<form id="eventForm">
+<div class="form-group">
+<label for="eventTitle">Τίτλος Συμβάντος / Σκοπός:</label>
+<input type="text" id="eventTitle" required placeholder="π.χ. Μετάβαση σε βλάβη, Περιπολία">
+</div>
 
-    <div class="archive-container">
-        <h2>Ιστορικό Συμβάντων</h2>
-        <div class="actions-bar">
-            <button class="btn-excel" onclick="exportToExcel()">📊 Excel</button>
-            <button class="btn-viber" onclick="sendToViber()">📱 Viber</button>
-            <button class="btn-clear" onclick="clearAllData()">🗑️ Καθαρισμός</button>
-        </div>
-        <div id="eventsList"></div>
-    </div>
+<div class="form-row">
+<div class="form-group">
+<label for="eventDateTime">Ημερομηνία & Ώρα:</label>
+<input type="datetime-local" id="eventDateTime" required>
+</div>
+<div class="form-group">
+<label for="eventDuration">Διάρκεια (π.χ. 2 ώρες, 45λ):</label>
+<input type="text" id="eventDuration" required placeholder="π.x. 1 ώρα & 30λ">
+</div>
+</div>
 
-    <script>
-        let events = [];
+<div class="form-row">
+<div class="form-group">
+<label for="eventVehicle">Όχημα (Πινακίδα/Κωδικός):</label>
+<input type="text" id="eventVehicle" required placeholder="π.χ. ΚΗΥ-1234, Περιπολικό 3">
+</div>
+<div class="form-group">
+<label for="eventCrew">Πλήρωμα (Ονόματα):</label>
+<input type="text" id="eventCrew" required placeholder="π.χ. Παπαδόπουλος, Νικολάου">
+</div>
+</div>
 
-        try {
-            const saved = localStorage.getItem('fleetStorageAppSystem');
-            if (saved) { events = JSON.parse(saved); }
-        } catch(e) {
-            console.log("Storage read error.");
-        }
+<div class="form-group">
+<label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
+<textarea id="eventDetails" placeholder="Γράψτε εδώ όλες τις απαραίτητες λεπτομέρειες, ενέργειες ή παρατηρήσεις..."></textarea>
+</div>
 
-        function formatDateTime(dateTimeStr) {
-            if (!dateTimeStr) return '';
-            const dt = new Date(dateTimeStr);
-            return dt.toLocaleString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
-        }
+<button type="submit" class="btn-submit">Αποθήκευση Συμβάντος</button>
+</form>
+</div>
 
-        function renderEvents() {
-            const eventsList = document.getElementById('eventsList');
-            if (!eventsList) return;
-            eventsList.innerHTML = '';
+<div class="archive-container">
+<h2>Ιστορικό Συμβάντων</h2>
+<div id="eventsList">
+<!-- Οι κάρτες των συμβάντων θα εμφανίζονται εδώ -->
+</div>
+</div>
 
-            if (!events || events.length === 0) {
-                eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν καταγεγραμμένα συμβάντα.</div>';
-                return;
-            }
+<script>
+let events = JSON.parse(localStorage.getItem('fleetEvents')) || [];
 
-            for (let i = events.length - 1; i >= 0; i--) {
-                const event = events[i];
-                const card = document.createElement('div');
-                card.className = 'event-card';
-                
-                card.innerHTML = `
-                    <h3>\${event.title || ''}</h3>
-                    <button class="btn-delete" onclick="deleteEvent(\${i})">Διαγραφή</button>
-                    <div class="event-grid">
-                        <div><span>Ημερομηνία:</span> \${formatDateTime(event.datetime)}</div>
-                        <div><span>Διάρκεια:</span> \${event.duration || ''}</div>
-                        <div><span>Όχημα:</span> \${event.vehicle || ''}</div>
-                        <div><span>Πλήρωμα:</span> \${event.crew || ''}</div>
-                    </div>
-                    \${event.details ? `<div class="event-details"><strong>Λεπτομέρειες:</strong><br>\${event.details}</div>` : ''}
-                `;
-                eventsList.appendChild(card);
-            }
-        }
+function formatDateTime(dateTimeStr) {
+const dt = new Date(dateTimeStr);
+return dt.toLocaleString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+}
 
-        document.getElementById('eventForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const newEvent = {
-                title: document.getElementById('eventTitle').value,
-                datetime: document.getElementById('eventDateTime').value,
-                duration: document.getElementById('eventDuration').value,
-                vehicle: document.getElementById('eventVehicle').value,
-                crew: document.getElementById('eventCrew').value,
-                details: document.getElementById('eventDetails').value
-            };
+function renderEvents() {
+const eventsList = document.getElementById('eventsList');
+eventsList.innerHTML = '';
 
-            events.push(newEvent);
-            
-            try { localStorage.setItem('fleetStorageAppSystem', JSON.stringify(events)); } catch(err) {}
-            
-            renderEvents();
-            document.getElementById('eventForm').reset();
-            setCurrentDateTime();
-        });
+if (events.length === 0) {
+eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν καταγεγραμμένα συμβάντα.</div>';
+return;
+}
 
-        window.deleteEvent = function(index) {
-            if(confirm('Διαγραφή αυτού του συμβάντος;')) {
-                events.splice(index, 1);
-                try { localStorage.setItem('fleetStorageAppSystem', JSON.stringify(events)); } catch(e) {}
-                renderEvents();
-            }
-        }
+// Εμφάνιση των συμβάντων με σειρά (τα νεότερα στην κορυφή)
+[...events].reverse().forEach((event, index) => {
+const originalIndex = events.length - 1 - index;
+const card = document.createElement('div');
+card.className = 'event-card';
 
-        window.clearAllData = function() {
-            if(confirm('Σίγουρα διαγραφή όλου του ιστορικού;')) {
-                events = [];
-                try { localStorage.removeItem('fleetStorageAppSystem'); } catch(e) {}
-                renderEvents();
-            }
-        }
+card.innerHTML = `
+<h3>${event.title}</h3>
+<button class="btn-delete" onclick="deleteEvent(${originalIndex})">Διαγραφή</button>
+<div class="event-grid">
+<div><span>Ημερομηνία & Ώρα:</span> ${formatDateTime(event.datetime)}</div>
+<div><span>Διάρκεια:</span> ${event.duration}</div>
+<div><span>Όχημα:</span> ${event.vehicle}</div>
+<div><span>Πλήρωμα:</span> ${event.crew}</div>
+</div>
+${event.details ? `<div class="event-details"><strong>Λεπτομέρειες:</strong><br>\${event.details}</div>` : ''}
+`;
+eventsList.appendChild(card);
+});
+}
 
-        window.exportToExcel = function() {
-            if (!events || events.length === 0) { alert('Δεν υπάρχουν συμβάντα!'); return; }
-            let csvContent = "\uFEFF"; 
-            csvContent += "Τίτλος / Σκοπός;Ημερομηνία & Ώρα;Διάρκεια;Όχημα;Πλήρωμα;Λεπτομέρειες\r\n";
-            events.forEach(event => {
-                let cleanDetails = (event.details || '').replace(/(\r\n|\n|\r)/gm, " ").replace(/;/g, ",");
-                csvContent += `"\${event.title}";"\${formatDateTime(event.datetime)}";"\${event.duration}";"\${event.vehicle}";"\${event.crew}";"\${cleanDetails}"\r\n`;
-            });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `Istoriko.csv`);
-            link.click();
-        }
+document.getElementById('eventForm').addEventListener('submit', function(e) {
+e.preventDefault();
 
-        window.sendToViber = function() {
-            if (!events || events.length === 0) { alert('Δεν υπάρχουν συμβάντα για αποστολή!'); return; }
-            
-            let textToSend = "📋 ΙΣΤΟΡΙΚΟ ΣΥΜΒΑΝΤΩΝ\n\n";
-            events.forEach((event, i) => {
-                textToSend += `\${i+1}. \${event.title || ''}\n📅 Ώρα: \${formatDateTime(event.datetime)}\n⏳ Διάρκεια: \${event.duration || ''}\n🚗 Όχημα: \${event.vehicle || ''}\n👥 Πλήρωμα: \${event.crew || ''}\n📝 Λεπτομέρειες: \${event.details || '-'}\n\n`;
-            });
+const newEvent = {
+title: document.getElementById('eventTitle').value,
+datetime: document.getElementById('eventDateTime').value,
+duration: document.getElementById('eventDuration').value,
+vehicle: document.getElementById('eventVehicle').value,
+crew: document.getElementById('eventCrew').value,
+details: document.getElementById('eventDetails').value
+};
 
-            const temp = document.createElement('textarea');
-            temp.value = textToSend;
-            document.body.appendChild(temp);
-            temp.select();
-            temp.setSelectionRange(0, 99999);
-            try { document.execCommand('copy'); } catch (err) {}
-            document.body.removeChild(temp);
+events.push(newEvent);
+localStorage.setItem('fleetEvents', JSON.stringify(events));
+renderEvents();
+document.getElementById('eventForm').reset();
 
-            window.location.href = "viber://forward?text=" + encodeURIComponent(textToSend);
-            
-            alert('🚀 Το κείμενο ετοιμάστηκε και αντιγράφηκε! Αν δεν ανοίξει αυτόματα το Viber, μπορείτε να μπείτε μόνοι σας στο Viber και να κάνετε απλή Επικόλληση (Paste).');
-        }
+// Αυτόματη συμπλήρωση της τρέχουσας ώρας για την επόμενη καταχώρηση
+setCurrentDateTime();
+});
 
-        function setCurrentDateTime() {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            const input = document.getElementById('eventDateTime');
-            if (input) input.value = now.toISOString().slice(0,16);
-        }
+window.deleteEvent = function(index) {
+if(confirm('Θέλετε σίγουρα να διαγράψετε αυτό το συμβάν;')) {
+events.splice(index, 1);
+localStorage.setItem('fleetEvents', JSON.stringify(events));
+renderEvents();
+}
+}
 
-        setCurrentDateTime();
-        renderEvents();
-    </script>
+// Βοηθητική συνάρτηση για να βάζει αυτόματα την τρέχουσα ημερομηνία/ώρα στη φόρμα
+function setCurrentDateTime() {
+const now = new Date();
+now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+document.getElementById('eventDateTime').value = now.toISOString().slice(0,16);
+}
+
+// Φόρτωση δεδομένων κατά την εκκίνηση
+setCurrentDateTime();
+renderEvents();
+</script>
+
 </body>
 </html>
