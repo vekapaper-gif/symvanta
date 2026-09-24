@@ -119,71 +119,72 @@ textarea {
   margin-top: 5px;
 }
 
-/* Κουμπιά */
-button.btn-start {
+/* Κουμπιά Ενεργειών Φόρμας */
+.action-btn {
   width: 100%;
   padding: 14px;
-  background-color: #10b981;
-  color: white;
   border: none;
   border-radius: 8px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
-}
-button.btn-start:hover {
-  background-color: #059669;
-}
-
-button.btn-finish {
-  width: 100%;
-  padding: 14px;
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-button.btn-finish:hover {
-  background-color: #dc2626;
-}
-
-button.btn-save {
-  width: 100%;
-  padding: 14px;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
+  box-sizing: border-box;
+  display: block;
   margin-top: 10px;
 }
-button.btn-save:hover {
+.btn-start {
+  background-color: #10b981;
+  color: white;
+}
+.btn-start:hover {
+  background-color: #059669;
+}
+.btn-finish {
+  background-color: #ef4444;
+  color: white;
+}
+.btn-finish:hover {
+  background-color: #dc2626;
+}
+.btn-save {
+  background-color: #4f46e5;
+  color: white;
+}
+.btn-save:hover {
   background-color: #4338ca;
 }
 
-button.btn-viber {
+/* Κουμπιά Αποστολής / Κοινοποίησης Ιστορικού */
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
   width: 100%;
-  padding: 12px;
-  background-color: #7360f2;
-  color: white;
+}
+.btn-export {
+  flex: 1;
+  padding: 12px 10px;
   border: none;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 0.9rem;
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
-  margin-bottom: 15px;
+  text-align: center;
+  color: white;
 }
-button.btn-viber:hover {
+.btn-export-primary {
+  background-color: #7360f2;
+}
+.btn-export-primary:hover {
   background-color: #5b47d6;
+}
+.btn-export-secondary {
+  background-color: #4b5563;
+}
+.btn-export-secondary:hover {
+  background-color: #374151;
 }
 
 /* Σχεδίαση Καρτών */
@@ -332,22 +333,27 @@ button.btn-viber:hover {
     </div>
 
     <div id="btnStartContainer">
-      <button type="button" class="btn-start" onclick="startEvent()">▶️ Έναρξη Συμβάντος</button>
+      <button type="button" class="action-btn btn-start" onclick="startEvent()">▶️ Έναρξη Συμβάντος</button>
     </div>
 
     <div id="btnFinishContainer" style="display:none;">
-      <button type="button" class="btn-finish" onclick="finishEvent()">⏹️ Λήξη Συμβάντος</button>
+      <button type="button" class="action-btn btn-finish" onclick="finishEvent()">⏹️ Λήξη Συμβάντος</button>
     </div>
 
     <div id="btnSaveContainer" style="display:none;">
-      <button type="button" class="btn-save" onclick="saveEventToHistory()">💾 Αποθήκευση στο Ιστορικό</button>
+      <button type="button" class="action-btn btn-save" onclick="saveEventToHistory()">💾 Αποθήκευση στο Ιστορικό</button>
     </div>
   </form>
 </div>
 
 <div class="archive-container">
   <h2>Ιστορικό Συμβάντων</h2>
-  <button class="btn-viber" onclick="exportToViber()">📤 Αποστολή Ιστορικού (Viber / Share)</button>
+  
+  <div class="export-buttons">
+    <button type="button" class="btn-export btn-export-primary" onclick="exportLastEvent()">📤 Αποστολή Τελευταίου</button>
+    <button type="button" class="btn-export btn-export-secondary" onclick="exportAllEvents()">📚 Αποστολή Όλου του Ιστορικού</button>
+  </div>
+
   <div id="eventsList">
     <!-- Οι κάρτες των συμβάντων -->
   </div>
@@ -406,7 +412,6 @@ function setMode(mode) {
   updateUIState();
 }
 
-// 1. Έναρξη Συμβάντος (Αυτόματη λειτουργία)
 function startEvent() {
   activeEvent = {
     title: document.getElementById('eventTitle').value.trim(),
@@ -420,7 +425,6 @@ function startEvent() {
   updateUIState();
 }
 
-// 2. Λήξη Συμβάντος (Αυτόματη λειτουργία)
 function finishEvent() {
   if (!activeEvent) return;
 
@@ -447,7 +451,6 @@ function finishEvent() {
   updateUIState();
 }
 
-// 3. Οριστική Αποθήκευση στο Ιστορικό
 function saveEventToHistory() {
   const title = document.getElementById('eventTitle').value.trim();
   const vehicle = document.getElementById('eventVehicle').value.trim();
@@ -517,7 +520,6 @@ function saveEventToHistory() {
   renderEvents();
 }
 
-// Ενημέρωση UI
 function updateUIState() {
   const btnModeAuto = document.getElementById('btnModeAuto');
   const btnModeManual = document.getElementById('btnModeManual');
@@ -537,7 +539,6 @@ function updateUIState() {
     btnModeAuto.classList.remove('active');
   }
 
-  // ΑΥΤΟΜΑΤΗ ΛΕΙΤΟΥΡΓΙΑ - ΕΝΕΡΓΟ ΣΥΜΒΑΝ
   if (currentMode === 'auto' && activeEvent) {
     statusActive.style.display = 'block';
     statusReview.style.display = 'none';
@@ -555,7 +556,6 @@ function updateUIState() {
 
     startTimer();
   } 
-  // ΑΥΤΟΜΑΤΗ ΛΕΙΤΟΥΡΓΙΑ - ΑΝΑΣΚΟΠΗΣΗ
   else if (currentMode === 'auto' && pendingEvent) {
     statusActive.style.display = 'none';
     statusReview.style.display = 'block';
@@ -577,7 +577,6 @@ function updateUIState() {
 
     if (timerInterval) clearInterval(timerInterval);
   } 
-  // ΧΕΙΡΟΚΙΝΗΤΗ ΛΕΙΤΟΥΡΓΙΑ (Μόνο πεδία έναρξης/λήξης & κουμπί αποθήκευσης)
   else if (currentMode === 'manual') {
     statusActive.style.display = 'none';
     statusReview.style.display = 'none';
@@ -590,7 +589,6 @@ function updateUIState() {
 
     if (timerInterval) clearInterval(timerInterval);
   } 
-  // ΑΥΤΟΜΑΤΗ ΛΕΙΤΟΥΡΓΙΑ - ΑΡΧΙΚΗ ΚΑΤΑΣΤΑΣΗ
   else {
     statusActive.style.display = 'none';
     statusReview.style.display = 'none';
@@ -660,7 +658,33 @@ window.deleteEvent = function(index) {
   }
 }
 
-function exportToViber() {
+function buildEventTextMessage(e) {
+  let text = `📌 *${e.title}*\n`;
+  if (e.route) text += `📍 Διαδρομή: ${e.route}\n`;
+  text += `🟢 Έναρξη: ${formatDateTime(e.startTime)}\n`;
+  text += `🔴 Λήξη: ${formatDateTime(e.endTime)}\n`;
+  text += `⏱️ Διάρκεια: ${e.duration}\n`;
+  text += `🚗 Όχημα: ${e.vehicle}\n`;
+  text += `👥 Πλήρωμα: ${e.crew}\n`;
+  if (e.details) text += `📝 Λεπτομέρειες: ${e.details}\n`;
+  return text;
+}
+
+function exportLastEvent() {
+  if (events.length === 0) {
+    alert('Δεν υπάρχουν συμβάντα για αποστολή.');
+    return;
+  }
+
+  const lastEvent = events[events.length - 1];
+  let text = "📋 *ΤΕΛΕΥΤΑΙΟ ΣΥΜΒΑΝ*\n";
+  text += "═══════════════════\n\n";
+  text += buildEventTextMessage(lastEvent);
+
+  sendText(text);
+}
+
+function exportAllEvents() {
   if (events.length === 0) {
     alert('Δεν υπάρχουν συμβάντα για αποστολή.');
     return;
@@ -670,26 +694,19 @@ function exportToViber() {
   text += "═══════════════════\n\n";
 
   [...events].reverse().forEach((e, i) => {
-    text += `📌 *${i + 1}. ${e.title}*\n`;
-    if (e.route) {
-      text += `📍 Διαδρομή: ${e.route}\n`;
-    }
-    text += `🟢 Έναρξη: ${formatDateTime(e.startTime)}\n`;
-    text += `🔴 Λήξη: ${formatDateTime(e.endTime)}\n`;
-    text += `⏱️ Διάρκεια: ${e.duration}\n`;
-    text += `🚗 Όχημα: ${e.vehicle}\n`;
-    text += `👥 Πλήρωμα: ${e.crew}\n`;
-    if (e.details) {
-      text += `📝 Λεπτομέρειες: ${e.details}\n`;
-    }
+    text += buildEventTextMessage(e);
     text += "───────────────────\n";
   });
 
+  sendText(text);
+}
+
+function sendText(text) {
   if (navigator.share) {
-    navigator.share({ title: 'Ιστορικό Συμβάντων', text: text }).catch(() => {});
+    navigator.share({ title: 'Συμβάντα', text: text }).catch(() => {});
   } else {
     navigator.clipboard.writeText(text).then(() => {
-      alert('Το ιστορικό αντιγράφηκε στο πρόχειρο!');
+      alert('Το κείμενο αντιγράφηκε στο πρόχειρο!');
     });
   }
 }
