@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Καταγραφή Συμβάντων</title>
-
-  <!-- Εικονίδιο για Safari / iOS / Chrome / Android -->
-  <link rel="icon" type="image/png" href="FIRE.png">
-  <link rel="apple-touch-icon" href="FIRE.png">
-</head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Καταγραφή Συμβάντων</title>
+
+<!-- Εικονίδιο Εφαρμογής (fire.png) -->
+<link rel="icon" type="image/png" href="fire.png">
+<link rel="apple-touch-icon" href="fire.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
+
 <style>
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -65,13 +64,16 @@ h2 {
 
 .form-group {
   margin-bottom: 15px;
+  width: 100%;
 }
 .form-row {
   display: flex;
   gap: 15px;
+  flex-wrap: wrap; /* Επιτρέπει στα πεδία να πέφτουν από κάτω αν δεν χωράνε */
 }
 .form-row .form-group {
   flex: 1;
+  min-width: 200px; /* Ελάχιστο πλάτος για να μην πιέζονται σε πολύ μικρές οθόνες */
 }
 label {
   display: block;
@@ -82,12 +84,13 @@ label {
 }
 input[type="text"], input[type="datetime-local"], select, textarea {
   width: 100%;
+  max-width: 100%;
   padding: 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   background-color: #f8fafc;
 }
 input:focus, select:focus, textarea:focus {
@@ -169,9 +172,11 @@ textarea {
   gap: 10px;
   margin-bottom: 20px;
   width: 100%;
+  flex-wrap: wrap;
 }
 .btn-export {
   flex: 1;
+  min-width: 180px;
   padding: 12px 10px;
   border: none;
   border-radius: 8px;
