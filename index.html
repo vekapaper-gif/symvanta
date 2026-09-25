@@ -69,11 +69,11 @@ h2 {
 .form-row {
   display: flex;
   gap: 15px;
-  flex-wrap: wrap; /* Επιτρέπει στα πεδία να πέφτουν από κάτω αν δεν χωράνε */
+  flex-wrap: wrap;
 }
 .form-row .form-group {
   flex: 1;
-  min-width: 200px; /* Ελάχιστο πλάτος για να μην πιέζονται σε πολύ μικρές οθόνες */
+  min-width: 200px;
 }
 label {
   display: block;
@@ -372,12 +372,52 @@ textarea {
   </div>
 </div>
 
+<!-- Ενσωμάτωση Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
 <script>
-let events = JSON.parse(localStorage.getItem('fleetEvents')) || [];
-let activeEvent = JSON.parse(localStorage.getItem('activeFleetEvent')) || null;
-let pendingEvent = JSON.parse(localStorage.getItem('pendingFleetEvent')) || null;
+// Αρχικοποίηση Firebase με το δικό σας Realtime Database URL
+const firebaseConfig = {
+  databaseURL: "https://symvanta-app-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let events = [];
+let eventsKeys = [];
+let activeEvent = null;
+let pendingEvent = null;
 let currentMode = localStorage.getItem('fleetMode') || 'auto';
 let timerInterval = null;
+
+// Real-time Ακρόαση Αλλαγών στο Ιστορικό
+db.ref('events').on('value', (snapshot) => {
+  const data = snapshot.val();
+  events = [];
+  eventsKeys = [];
+  
+  if (data) {
+    Object.keys(data).forEach(key => {
+      eventsKeys.push(key);
+      events.push(data[key]);
+    });
+  }
+  renderEvents();
+});
+
+// Real-time Ακρόαση Ενεργού Συμβάντος
+db.ref('activeEvent').on('value', (snapshot) => {
+  activeEvent = snapshot.val();
+  updateUIState();
+});
+
+// Real-time Ακρόαση Συμβάντος σε Εκκρεμότητα
+db.ref('pendingEvent').on('value', (snapshot) => {
+  pendingEvent = snapshot.val();
+  updateUIState();
+});
 
 function formatDateTime(dateTimeStr) {
   if (!dateTimeStr) return '';
@@ -434,8 +474,7 @@ function startEvent() {
     startTime: new Date().toISOString()
   };
 
-  localStorage.setItem('activeFleetEvent', JSON.stringify(activeEvent));
-  updateUIState();
+  db.ref('activeEvent').set(activeEvent);
 }
 
 function finishEvent() {
@@ -455,13 +494,8 @@ function finishEvent() {
     duration: formatDuration(durationMs)
   };
 
-  activeEvent = null;
-  localStorage.removeItem('activeFleetEvent');
-  localStorage.setItem('pendingFleetEvent', JSON.stringify(pendingEvent));
-  
-  if (timerInterval) clearInterval(timerInterval);
-
-  updateUIState();
+  db.ref('activeEvent').remove();
+  db.ref('pendingEvent').set(pendingEvent);
 }
 
 function saveEventToHistory() {
@@ -516,11 +550,8 @@ function saveEventToHistory() {
     duration: durationStr
   };
 
-  events.push(finalEvent);
-  localStorage.setItem('fleetEvents', JSON.stringify(events));
-
-  pendingEvent = null;
-  localStorage.removeItem('pendingFleetEvent');
+  db.ref('events').push(finalEvent);
+  db.ref('pendingEvent').remove();
 
   document.getElementById('eventForm').reset();
   
@@ -528,9 +559,6 @@ function saveEventToHistory() {
     document.getElementById('manualStart').value = getNowISO();
     document.getElementById('manualEnd').value = getNowISO();
   }
-
-  updateUIState();
-  renderEvents();
 }
 
 function updateUIState() {
@@ -643,12 +671,14 @@ function renderEvents() {
 
   [...events].reverse().forEach((event, index) => {
     const originalIndex = events.length - 1 - index;
+    const firebaseKey = eventsKeys[originalIndex];
+    
     const card = document.createElement('div');
     card.className = 'event-card';
 
     card.innerHTML = `
       <h3>${event.title}</h3>
-      <button class="btn-delete" onclick="deleteEvent(${originalIndex})">Διαγραφή</button>
+      <button class="btn-delete" onclick="deleteEvent('${firebaseKey}')">Διαγραφή</button>
       <div class="event-grid">
         <div><span>Έναρξη:</span> ${formatDateTime(event.startTime)}</div>
         <div><span>Λήξη:</span> ${formatDateTime(event.endTime)}</div>
@@ -663,11 +693,9 @@ function renderEvents() {
   });
 }
 
-window.deleteEvent = function(index) {
+window.deleteEvent = function(key) {
   if(confirm('Θέλετε σίγουρα να διαγράψετε αυτό το συμβάν;')) {
-    events.splice(index, 1);
-    localStorage.setItem('fleetEvents', JSON.stringify(events));
-    renderEvents();
+    db.ref('events/' + key).remove();
   }
 }
 
@@ -706,7 +734,7 @@ function exportAllEvents() {
   let text = "📋 *ΙΣΤΟΡΙΚΟ ΣΥΜΒΑΝΤΩΝ*\n";
   text += "═══════════════════\n\n";
 
-  [...events].reverse().forEach((e, i) => {
+  [...events].reverse().forEach((e) => {
     text += buildEventTextMessage(e);
     text += "───────────────────\n";
   });
@@ -726,7 +754,6 @@ function sendText(text) {
 
 // Αρχικοποίηση
 updateUIState();
-renderEvents();
 </script>
 
 </body>
