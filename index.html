@@ -377,9 +377,9 @@ textarea {
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
-// Αρχικοποίηση Firebase με το δικό σας Realtime Database URL
+// Αρχικοποίηση Firebase
 const firebaseConfig = {
-  databaseURL: "https://symvanta-app-default-rtdb.europe-west1.firebasedatabase.app/"
+  databaseURL: "https://symvanta-app-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -405,6 +405,9 @@ db.ref('events').on('value', (snapshot) => {
     });
   }
   renderEvents();
+}, (error) => {
+  console.error("Σφάλμα συγχρονισμού Firebase:", error);
+  alert("Αποτυχία σύνδεσης με τη βάση: " + error.message);
 });
 
 // Real-time Ακρόαση Ενεργού Συμβάντος
@@ -418,6 +421,7 @@ db.ref('pendingEvent').on('value', (snapshot) => {
   pendingEvent = snapshot.val();
   updateUIState();
 });
+</script>
 
 function formatDateTime(dateTimeStr) {
   if (!dateTimeStr) return '';
