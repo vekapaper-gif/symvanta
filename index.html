@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Καταγραφή Συμβάντων</title>
 
+<!-- Εικονίδιο Εφαρμογής (FIRE.png) -->
 <link rel="icon" type="image/png" href="FIRE.png">
 <link rel="apple-touch-icon" href="FIRE.png">
-<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4f46e5">
 
 <style>
@@ -308,4 +308,425 @@ textarea {
 
     <div id="timeReviewBox" class="time-info-box" style="display:none;">
       <div><span>Έναρξη</span><div id="lblStart">-</div></div>
-      <div><span>Λήξη</span><div id="lblEnd">-</div>
+      <div><span>Λήξη</span><div id="lblEnd">-</div></div>
+      <div><span>Διάρκεια</span><div id="lblDuration">-</div></div>
+    </div>
+
+    <div class="form-group">
+      <label for="eventDetails">Λεπτομέρειες Συμβάντος:</label>
+      <textarea id="eventDetails" placeholder="Γράψτε εδώ τις λεπτομέρειες, ενέργειες ή παρατηρήσεις..."></textarea>
+    </div>
+
+    <div id="btnStartContainer">
+      <button type="button" class="action-btn btn-start" onclick="startEvent()">▶️ Έναρξη Συμβάντος</button>
+    </div>
+
+    <div id="btnFinishContainer" style="display:none;">
+      <button type="button" class="action-btn btn-finish" onclick="finishEvent()">⏹️ Λήξη Συμβάντος</button>
+    </div>
+
+    <div id="btnSaveContainer" style="display:none;">
+      <button type="button" class="action-btn btn-save" onclick="saveEventToHistory()">💾 Αποθήκευση στο Ιστορικό</button>
+    </div>
+  </form>
+</div>
+
+<div class="archive-container">
+  <h2>Ιστορικό Συμβάντων</h2>
+  
+  <div class="export-buttons">
+    <button type="button" class="btn-export btn-export-primary" onclick="exportLastEvent()">📤 Αποστολή Τελευταίου</button>
+    <button type="button" class="btn-export btn-export-secondary" onclick="exportAllEvents()">📚 Αποστολή Όλου του Ιστορικού</button>
+  </div>
+
+  <div id="eventsList"></div>
+</div>
+
+<!-- Ενσωμάτωση Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+<script>
+// Ορισμοί συναρτήσεων
+let events = [];
+let eventsKeys = [];
+let activeEvent = null;
+let pendingEvent = null;
+let currentMode = localStorage.getItem('fleetMode') || 'auto';
+let timerInterval = null;
+
+function formatDateTime(dateTimeStr) {
+  if (!dateTimeStr) return '';
+  const dt = new Date(dateTimeStr);
+  return dt.toLocaleString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+}
+
+function formatDuration(ms) {
+  if (ms < 0) return '0δ';
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  let res = [];
+  if (hours > 0) res.push(`${hours}ω`);
+  if (minutes > 0 || hours > 0) res.push(`${minutes}λ`);
+  res.push(`${seconds}δ`);
+  return res.join(' ');
+}
+
+function getNowISO() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function renderEvents() {
+  const eventsList = document.getElementById('eventsList');
+  eventsList.innerHTML = '';
+
+  if (events.length === 0) {
+    eventsList.innerHTML = '<div class="no-events">Δεν υπάρχουν καταγεγραμμένα συμβάντα.</div>';
+    return;
+  }
+
+  [...events].reverse().forEach((event, index) => {
+    const originalIndex = events.length - 1 - index;
+    const firebaseKey = eventsKeys[originalIndex];
+    
+    const card = document.createElement('div');
+    card.className = 'event-card';
+
+    card.innerHTML = `
+      <h3>${event.title}</h3>
+      <button class="btn-delete" onclick="deleteEvent('${firebaseKey}')">Διαγραφή</button>
+      <div class="event-grid">
+        <div><span>Έναρξη:</span> ${formatDateTime(event.startTime)}</div>
+        <div><span>Λήξη:</span> ${formatDateTime(event.endTime)}</div>
+        <div><span>Διάρκεια:</span> ${event.duration}</div>
+        <div><span>Όχημα:</span> ${event.vehicle}</div>
+        <div style="grid-column: span 2;"><span>Πλήρωμα:</span> ${event.crew}</div>
+        ${event.route ? `<div style="grid-column: span 2;"><span>Διαδρομή / Προορισμός:</span> ${event.route}</div>` : ''}
+      </div>
+      ${event.details ? `<div class="event-details"><strong>Λεπτομέρειες:</strong><br>${event.details}</div>` : ''}
+    `;
+    eventsList.appendChild(card);
+  });
+}
+
+function updateUIState() {
+  const btnModeAuto = document.getElementById('btnModeAuto');
+  const btnModeManual = document.getElementById('btnModeManual');
+  const manualTimeBox = document.getElementById('manualTimeBox');
+  const statusActive = document.getElementById('statusActive');
+  const statusReview = document.getElementById('statusReview');
+  const btnStart = document.getElementById('btnStartContainer');
+  const btnFinish = document.getElementById('btnFinishContainer');
+  const btnSave = document.getElementById('btnSaveContainer');
+  const timeReviewBox = document.getElementById('timeReviewBox');
+
+  if (currentMode === 'auto') {
+    btnModeAuto.classList.add('active');
+    btnModeManual.classList.remove('active');
+  } else {
+    btnModeManual.classList.add('active');
+    btnModeAuto.classList.remove('active');
+  }
+
+  if (currentMode === 'auto' && activeEvent) {
+    statusActive.style.display = 'block';
+    statusReview.style.display = 'none';
+    timeReviewBox.style.display = 'none';
+    manualTimeBox.style.display = 'none';
+
+    btnStart.style.display = 'none';
+    btnFinish.style.display = 'block';
+    btnSave.style.display = 'none';
+
+    if (activeEvent.title) document.getElementById('eventTitle').value = activeEvent.title;
+    if (activeEvent.route) document.getElementById('eventRoute').value = activeEvent.route;
+    if (activeEvent.vehicle) document.getElementById('eventVehicle').value = activeEvent.vehicle;
+    if (activeEvent.crew) document.getElementById('eventCrew').value = activeEvent.crew;
+
+    startTimer();
+  } 
+  else if (currentMode === 'auto' && pendingEvent) {
+    statusActive.style.display = 'none';
+    statusReview.style.display = 'block';
+    timeReviewBox.style.display = 'grid';
+    manualTimeBox.style.display = 'none';
+
+    btnStart.style.display = 'none';
+    btnFinish.style.display = 'none';
+    btnSave.style.display = 'block';
+
+    if (pendingEvent.title) document.getElementById('eventTitle').value = pendingEvent.title;
+    if (pendingEvent.route) document.getElementById('eventRoute').value = pendingEvent.route;
+    if (pendingEvent.vehicle) document.getElementById('eventVehicle').value = pendingEvent.vehicle;
+    if (pendingEvent.crew) document.getElementById('eventCrew').value = pendingEvent.crew;
+
+    document.getElementById('lblStart').textContent = formatDateTime(pendingEvent.startTime);
+    document.getElementById('lblEnd').textContent = formatDateTime(pendingEvent.endTime);
+    document.getElementById('lblDuration').textContent = pendingEvent.duration;
+
+    if (timerInterval) clearInterval(timerInterval);
+  } 
+  else if (currentMode === 'manual') {
+    statusActive.style.display = 'none';
+    statusReview.style.display = 'none';
+    timeReviewBox.style.display = 'none';
+    manualTimeBox.style.display = 'flex';
+
+    btnStart.style.display = 'none';
+    btnFinish.style.display = 'none';
+    btnSave.style.display = 'block';
+
+    if (timerInterval) clearInterval(timerInterval);
+  } 
+  else {
+    statusActive.style.display = 'none';
+    statusReview.style.display = 'none';
+    timeReviewBox.style.display = 'none';
+    manualTimeBox.style.display = 'none';
+
+    btnStart.style.display = 'block';
+    btnFinish.style.display = 'none';
+    btnSave.style.display = 'none';
+
+    if (timerInterval) clearInterval(timerInterval);
+  }
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  
+  function updateTimer() {
+    if (!activeEvent) return;
+    const diff = new Date() - new Date(activeEvent.startTime);
+    const hrs = String(Math.floor(diff / 3600000)).padStart(2, '0');
+    const mins = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+    const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    document.getElementById('liveTimer').textContent = `${hrs}:${mins}:${secs}`;
+  }
+
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 1000);
+}
+
+function setMode(mode) {
+  if (activeEvent || pendingEvent) {
+    if (!confirm('Υπάρχει ενεργό ή σε εκκρεμότητα συμβάν. Θέλετε να αλλάξετε λειτουργία;')) {
+      return;
+    }
+  }
+  currentMode = mode;
+  localStorage.setItem('fleetMode', mode);
+  
+  if (mode === 'manual') {
+    if (!document.getElementById('manualStart').value) {
+      document.getElementById('manualStart').value = getNowISO();
+    }
+    if (!document.getElementById('manualEnd').value) {
+      document.getElementById('manualEnd').value = getNowISO();
+    }
+  }
+
+  updateUIState();
+}
+
+function startEvent() {
+  activeEvent = {
+    title: document.getElementById('eventTitle').value.trim(),
+    route: document.getElementById('eventRoute').value.trim(),
+    vehicle: document.getElementById('eventVehicle').value.trim(),
+    crew: document.getElementById('eventCrew').value.trim(),
+    startTime: new Date().toISOString()
+  };
+
+  db.ref('activeEvent').set(activeEvent);
+}
+
+function finishEvent() {
+  if (!activeEvent) return;
+
+  const endTime = new Date();
+  const startTime = new Date(activeEvent.startTime);
+  const durationMs = endTime - startTime;
+
+  pendingEvent = {
+    title: document.getElementById('eventTitle').value.trim(),
+    route: document.getElementById('eventRoute').value.trim(),
+    vehicle: document.getElementById('eventVehicle').value.trim(),
+    crew: document.getElementById('eventCrew').value.trim(),
+    startTime: activeEvent.startTime,
+    endTime: endTime.toISOString(),
+    duration: formatDuration(durationMs)
+  };
+
+  db.ref('activeEvent').remove();
+  db.ref('pendingEvent').set(pendingEvent);
+}
+
+function saveEventToHistory() {
+  const title = document.getElementById('eventTitle').value.trim();
+  const vehicle = document.getElementById('eventVehicle').value.trim();
+  const crew = document.getElementById('eventCrew').value.trim();
+
+  if (!title || !vehicle || !crew) {
+    alert('Παρακαλώ συμπληρώστε τουλάχιστον Τίτλο, Όχημα και Πλήρωμα πριν την αποθήκευση.');
+    return;
+  }
+
+  let finalStart, finalEnd, durationStr;
+
+  if (currentMode === 'manual') {
+    const manualStartVal = document.getElementById('manualStart').value;
+    const manualEndVal = document.getElementById('manualEnd').value;
+
+    if (!manualStartVal || !manualEndVal) {
+      alert('Παρακαλώ συμπληρώστε την Ώρα Έναρξης και την Ώρα Λήξης.');
+      return;
+    }
+
+    const dtStart = new Date(manualStartVal);
+    const dtEnd = new Date(manualEndVal);
+
+    if (dtEnd < dtStart) {
+      alert('Η ώρα λήξης δεν μπορεί να είναι προγενέστερη της ώρας έναρξης.');
+      return;
+    }
+
+    finalStart = dtStart.toISOString();
+    finalEnd = dtEnd.toISOString();
+    durationStr = formatDuration(dtEnd - dtStart);
+  } else if (pendingEvent) {
+    finalStart = pendingEvent.startTime;
+    finalEnd = pendingEvent.endTime;
+    durationStr = pendingEvent.duration;
+  } else {
+    alert('Σφάλμα: Δεν υπάρχει καταγεγραμμένο συμβάν.');
+    return;
+  }
+
+  const finalEvent = {
+    title: title,
+    route: document.getElementById('eventRoute').value.trim(),
+    vehicle: vehicle,
+    crew: crew,
+    details: document.getElementById('eventDetails').value.trim(),
+    startTime: finalStart,
+    endTime: finalEnd,
+    duration: durationStr
+  };
+
+  db.ref('events').push(finalEvent);
+  db.ref('pendingEvent').remove();
+
+  document.getElementById('eventForm').reset();
+  
+  if (currentMode === 'manual') {
+    document.getElementById('manualStart').value = getNowISO();
+    document.getElementById('manualEnd').value = getNowISO();
+  }
+}
+
+window.deleteEvent = function(key) {
+  if(confirm('Θέλετε σίγουρα να διαγράψετε αυτό το συμβάν;')) {
+    db.ref('events/' + key).remove();
+  }
+}
+
+function buildEventTextMessage(e) {
+  let text = `📌 *${e.title}*\n`;
+  if (e.route) text += `📍 Διαδρομή: ${e.route}\n`;
+  text += `🟢 Έναρξη: ${formatDateTime(e.startTime)}\n`;
+  text += `🔴 Λήξη: ${formatDateTime(e.endTime)}\n`;
+  text += `⏱️ Διάρκεια: ${e.duration}\n`;
+  text += `🚗 Όχημα: ${e.vehicle}\n`;
+  text += `👥 Πλήρωμα: ${e.crew}\n`;
+  if (e.details) text += `📝 Λεπτομέρειες: ${e.details}\n`;
+  return text;
+}
+
+function exportLastEvent() {
+  if (events.length === 0) {
+    alert('Δεν υπάρχουν συμβάντα για αποστολή.');
+    return;
+  }
+
+  const lastEvent = events[events.length - 1];
+  let text = "📋 *ΤΕΛΕΥΤΑΙΟ ΣΥΜΒΑΝ*\n";
+  text += "═══════════════════\n\n";
+  text += buildEventTextMessage(lastEvent);
+
+  sendText(text);
+}
+
+function exportAllEvents() {
+  if (events.length === 0) {
+    alert('Δεν υπάρχουν συμβάντα για αποστολή.');
+    return;
+  }
+
+  let text = "📋 *ΙΣΤΟΡΙΚΟ ΣΥΜΒΑΝΤΩΝ*\n";
+  text += "═══════════════════\n\n";
+
+  [...events].reverse().forEach((e) => {
+    text += buildEventTextMessage(e);
+    text += "───────────────────\n";
+  });
+
+  sendText(text);
+}
+
+function sendText(text) {
+  if (navigator.share) {
+    navigator.share({ title: 'Συμβάντα', text: text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Το κείμενο αντιγράφηκε στο πρόχειρο!');
+    });
+  }
+}
+
+// Αρχικοποίηση Firebase
+const firebaseConfig = {
+  databaseURL: "https://symvanta-app-default-rtdb.europe-west1.firebasedatabase.app"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const db = firebase.database();
+
+// REAL-TIME LISTENERS
+db.ref('events').on('value', (snapshot) => {
+  const data = snapshot.val();
+  events = [];
+  eventsKeys = [];
+  
+  if (data) {
+    Object.keys(data).forEach(key => {
+      eventsKeys.push(key);
+      events.push(data[key]);
+    });
+  }
+  renderEvents();
+});
+
+db.ref('activeEvent').on('value', (snapshot) => {
+  activeEvent = snapshot.val();
+  updateUIState();
+});
+
+db.ref('pendingEvent').on('value', (snapshot) => {
+  pendingEvent = snapshot.val();
+  updateUIState();
+});
+
+// Αρχικοποίηση Διεπαφής
+updateUIState();
+</script>
+
+</body>
+</html>
